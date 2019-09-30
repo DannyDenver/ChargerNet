@@ -13,9 +13,6 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from datetime import datetime
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.hybrid import hybrid_property
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -26,81 +23,7 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-
-# TODO: connect to a local postgresql database
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Show(db.Model): 
-    __tablename__ = 'show'
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True, nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True, nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
-    show_venue = db.relationship("Venue")
-    show_artist = db.relationship("Artist")
-    def __repr__(self):
-        return '<Show' + ' ' + self.show_venue.name + ' ' + self.show_artist.name + ' ' + str(self.start_time) + '>'
-
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(40))
-    city = db.Column(db.String(30))
-    state = db.Column(db.String(30))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(20))
-    image_link = db.Column(db.String(200))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref=db.backref("venue"))
-    def __repr__(self):
-        return '<Venue ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20))
-    city = db.Column(db.String(30))
-    state = db.Column(db.String(30))
-    phone = db.Column(db.String(20))
-    genres = db.Column(ARRAY(db.String(20)))
-    image_link = db.Column(db.String(200))
-    facebook_link = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String(500))
-    shows = db.relationship("Show", backref=db.backref("artist"), lazy="dynamic")
-
-    @hybrid_property
-    def upcoming_shows(self):
-      return self.shows.filter(Show.start_time > datetime.now()).all()
-
-    @hybrid_property
-    def upcoming_shows_count(self):
-      return len(self.shows.filter(Show.start_time > datetime.now()).all())
-
-    @hybrid_property
-    def past_shows(self):
-      return self.shows.filter(Show.start_time < datetime.now()).all()
-
-    @hybrid_property
-    def past_shows_count(self):
-      return len(self.shows.filter(Show.start_time < datetime.now()).all())   
-
-    
-
-    def __repr__(self):
-        return '<Artist ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+from models import Show, Artist, Venue, Info
 
 #----------------------------------------------------------------------------#
 # Filters.

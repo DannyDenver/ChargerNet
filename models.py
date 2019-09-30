@@ -1,31 +1,109 @@
-## no shows property 
-class Artist: 
-    def __init___(self, id, name, city, state, address, phone, image_link, facebook_link, website, seeking_talent, seeking_description, shows, past_shows, past_shows_count, upcoming_shows, upcoming_shows_count):
-        self.id = id
-        self.name = name,
-        self.city = city
-        self.state = state
-        self.address = address
-        self.phone = phone
-        self.image_link = image_link
-        self.facebook_link = facebook_link
-        self.website = website
-        self.seeking_talent = seeking_talent
-        self.seeking_description = seeking_description
-        self.upcoming_shows = upcoming_shows
-        self.upcoming_shows_count = upcoming_shows_count
-        self.past_shows = past_shows
-        self.past_shows_count = past_shows_count
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.hybrid import hybrid_property
+from datetime import datetime
 
-class Show:
-    def __init__(self, artist_id, venue_id, start_time, artist_name, artist_image_link, venue_name, venue_image_link):
-        self.artist_id = artist_id
-        self.venue_id = venue_id
-        self.start_time = start_time
-        self.artist_name = artist_name
-        self.artist_image_link = artist_image_link
-        self.venue_name = venue_name
-        self.venue_image_link = venue_image_link
+#----------------------------------------------------------------------------#
+# Models.
+#----------------------------------------------------------------------------#
+
+class Artist(db.Model):
+    __tablename__ = 'Artist'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(20))
+    city = db.Column(db.String(30))
+    state = db.Column(db.String(30))
+    phone = db.Column(db.String(20))
+    genres = db.Column(ARRAY(db.String(20)))
+    image_link = db.Column(db.String(200))
+    facebook_link = db.Column(db.String(120))
+    seeking_venue = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(500))
+    shows = db.relationship("Show", backref=db.backref("artist"), lazy="dynamic")
+
+    @hybrid_property
+    def upcoming_shows(self):
+      return self.shows.filter(Show.start_time > datetime.now()).all()
+
+    @hybrid_property
+    def upcoming_shows_count(self):
+      return len(self.shows.filter(Show.start_time > datetime.now()).all())
+
+    @hybrid_property
+    def past_shows(self):
+      return self.shows.filter(Show.start_time < datetime.now()).all()
+
+    @hybrid_property
+    def past_shows_count(self):
+      return len(self.shows.filter(Show.start_time < datetime.now()).all())   
+
+    
+
+    def __repr__(self):
+        return '<Artist ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
+
+class Show(db.Model): 
+    __tablename__ = 'show'
+    
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True, nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True, nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
+    show_venue = db.relationship("Venue")
+    show_artist = db.relationship("Artist")
+
+    @hybrid_property
+    def artist_name(self):
+      return self.show_artist.name
+
+    @hybrid_property
+    def artist_image_link(self):
+      return self.show_artist.image_link
+    
+    @hybrid_property
+    def venue_name(self):
+      return self.show_venue.name
+
+    @hybrid_property
+    def venue_image_link(self):
+      return self.show_venue.image_link
+
+    def __repr__(self):
+        return '<Show' + ' ' + self.show_venue.name + ' ' + self.show_artist.name + ' ' + str(self.start_time) + '>'
+
+class Venue(db.Model):
+    __tablename__ = 'Venue'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(40))
+    city = db.Column(db.String(30))
+    state = db.Column(db.String(30))
+    address = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    image_link = db.Column(db.String(200))
+    facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(500))
+    shows = db.relationship('Show', backref=db.backref("venue"))
+
+    @hybrid_property
+    def upcoming_shows(self):
+      return self.shows.filter(Show.start_time > datetime.now()).all()
+
+    @hybrid_property
+    def upcoming_shows_count(self):
+      return len(self.shows.filter(Show.start_time > datetime.now()).all())
+
+    @hybrid_property
+    def past_shows(self):
+      return self.shows.filter(Show.start_time < datetime.now()).all()
+
+    @hybrid_property
+    def past_shows_count(self):
+      return len(self.shows.filter(Show.start_time < datetime.now()).all())   
+
+    def __repr__(self):
+        return '<Venue ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
 
 class Info:
     def __init__(self, id, name, num_upcoming_shows):
@@ -33,20 +111,3 @@ class Info:
         self.name = name
         self.num_upcoming_shows = num_upcoming_shows
 
-## no shows property
-class Venue: 
-    def __init__(self, id, name, city, state, address, phone, facebook_link, website, seeking_talent, seeking_description, upcoming_shows, upcoming_shows_count, past_shows, past_shows_count:
-        self.id = id
-        self.name = name
-        self.city = city
-        self.state = state
-        self.address = address
-        self.phone = phone
-        self.facebook_link = facebook_link
-        self.website = website
-        self.seeking_talent = seeking_talent
-        self.seeking_description = seeking_description
-        self.upcoming_shows = self.upcoming_shows
-        self.upcoming_shows_count = self.upcoming_shows_count
-        self.past_shows = past_shows
-        self.past_shows_count = past_shows_count
