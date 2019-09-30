@@ -32,10 +32,6 @@ class Info:
         self.id = id
         self.name = name
         self.num_upcoming_shows = num_upcoming_shows
-    
-    #id
-    #name
-    #num_upcoming_shows
 
 ## no shows property
 class Venue: 

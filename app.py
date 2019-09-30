@@ -15,6 +15,7 @@ from flask_wtf import Form
 from forms import *
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.hybrid import hybrid_property
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -40,7 +41,7 @@ class Show(db.Model):
     show_venue = db.relationship("Venue")
     show_artist = db.relationship("Artist")
     def __repr__(self):
-        return '<Show' + str(self.id) + ' ' + self.show_venue + ' ' + self.show_artist + ' ' + self.start_time + '>'
+        return '<Show' + ' ' + self.show_venue.name + ' ' + self.show_artist.name + ' ' + str(self.start_time) + '>'
 
 class Venue(db.Model):
     __tablename__ = 'Venue'
@@ -75,7 +76,26 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship("Show", backref=db.backref("artist"))
+    shows = db.relationship("Show", backref=db.backref("artist"), lazy="dynamic")
+
+    @hybrid_property
+    def upcoming_shows(self):
+      return self.shows.filter(Show.start_time > datetime.now()).all()
+
+    @hybrid_property
+    def upcoming_shows_count(self):
+      return len(self.shows.filter(Show.start_time > datetime.now()).all())
+
+    @hybrid_property
+    def past_shows(self):
+      return self.shows.filter(Show.start_time < datetime.now()).all()
+
+    @hybrid_property
+    def past_shows_count(self):
+      return len(self.shows.filter(Show.start_time < datetime.now()).all())   
+
+    
+
     def __repr__(self):
         return '<Artist ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
