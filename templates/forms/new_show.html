@@ -12,6 +12,7 @@
             <ul class="errors">{% for error in form.artist_id.errors %}<li>{{ error }}</li>{% endfor %}</ul>
         {% endif %}
       </div>
+      {{ form.hidden_tag() }}
       <div class="form-group">
         <label for="venue_id">Venue ID</label>
         <small>ID can be found on the Venue's Page</small>

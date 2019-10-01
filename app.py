@@ -507,7 +507,7 @@ def create_show_submission():
   if not showForm.validate():
     return render_template('forms/new_show.html', form=showForm)
 
-  duplicate = Show.query.filter_by(venue_id=request.form['venue_id']).filter_by(artist_id=request.form['artist_id']).filter_by(start_time=request.form['start_time'])
+  duplicate = Show.query.filter_by(venue_id=request.form['venue_id']).filter_by(artist_id=request.form['artist_id']).filter_by(start_time=request.form['start_time']).first()
   if duplicate:
     flash('Show already created. Duplicate show was not added.', 'error')
     return render_template('pages/home.html')
