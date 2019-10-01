@@ -1,7 +1,7 @@
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime
-
+from app import db
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
@@ -35,16 +35,14 @@ class Artist(db.Model):
 
     @hybrid_property
     def past_shows_count(self):
-      return len(self.shows.filter(Show.start_time < datetime.now()).all())   
-
-    
+      return len(self.shows.filter(Show.start_time < datetime.now()).all())    
 
     def __repr__(self):
         return '<Artist ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
 
 class Show(db.Model): 
     __tablename__ = 'show'
-    
+
     artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True, nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True, nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
@@ -79,6 +77,7 @@ class Venue(db.Model):
     state = db.Column(db.String(30))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(20))
+    genres = db.Column(ARRAY(db.String(20)))
     image_link = db.Column(db.String(200))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String(120))

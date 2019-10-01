@@ -3,6 +3,9 @@ body {
   padding-bottom: 40px;
   background-color: #eee;
 }
+.errors {
+  color: red;
+}
 .form-only-page .form {
   max-width: 330px;
   padding: 15px;

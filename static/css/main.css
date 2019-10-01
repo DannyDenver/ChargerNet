@@ -96,6 +96,10 @@ p.lead {
     margin-right: 10px;
 }
 
+.errors {
+  color: red;
+}
+
 ul.items {
   list-style: none;
   padding: 0;
