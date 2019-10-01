@@ -1,14 +1,14 @@
 from datetime import datetime
 from flask_wtf import Form
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
+from wtforms import StringField, SelectField, IntegerField, SelectMultipleField, DateTimeField
 from wtforms.validators import DataRequired, AnyOf, URL, InputRequired, Regexp
 
 class ShowForm(Form):
-    artist_id = StringField(
+    artist_id = IntegerField(
         'artist_id', validators=[InputRequired()]
     )
-    venue_id = StringField(
+    venue_id = IntegerField(
         'venue_id', validators=[InputRequired()]
     )
     start_time = DateTimeField(

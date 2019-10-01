@@ -11,6 +11,8 @@
             <ul class="errors">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
         {% endif %}
       </div>
+                  {{ form.hidden_tag() }}
+
       <div class="form-group">
           <label>City & State</label>
           <div class="form-inline">

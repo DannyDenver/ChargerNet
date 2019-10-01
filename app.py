@@ -11,9 +11,11 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from forms import *
 import sys
+from sqlalchemy import func
+
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -185,45 +187,42 @@ def show_venue(venue_id):
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
   form = VenueForm()
-  print(form)
   form.validate_on_submit()
   return render_template('forms/new_venue.html', form=form)
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
   error = False
-  duplicate = Venue.query.filter_by(name=request.form['name']).first()
-  venueForm = VenueForm(request.form)
-  print(venueForm.validate())
   print(request.form)
 
+  venueForm = VenueForm(request.form)
   if not venueForm.validate():
     return render_template('forms/new_venue.html', form=venueForm)
 
-  if not duplicate:
-    try:
-      venue=Venue(name=request.form['name'], city=request.form['city'], state=request.form['state'], address=request.form['address'], phone=request.form['phone'], website=request.form['website'], genres=request.form.getlist('genres'), facebook_link=request.form['facebook_link'], image_link=request.form['image_link'])
-      db.session.add(venue)
-      db.session.commit()
-    except:
-      db.session.rollback()
-      error = True
-      print(sys.exc_info())
-    finally:
-      db.session.close()
-  
-    if error:
-      flash('An error occurred. Venue ' + request.form["name"] + ' could not be listed.', 'error')
-    if not error:
-      flash('Venue ' + request.form['name'] + ' was successfully listed!')
-
+  duplicate = Venue.query.filter(func.lower(Venue.name)==func.lower(request.form['name'])).first()
+  print(duplicate)
+  if duplicate:
+    print('duplicate venue')
+    flash('Venue already created. Duplicate venue not added.', 'error')
     return render_template('pages/home.html')
-  
-  flash('Venue already created', 'error')
-  return render_template('pages/home.html')
 
+  try:
+    venue=Venue(name=request.form['name'], city=request.form['city'], state=request.form['state'], address=request.form['address'], phone=request.form['phone'], website=request.form['website'], genres=request.form.getlist('genres'), facebook_link=request.form['facebook_link'], image_link=request.form['image_link'])
+    db.session.add(venue)
+    db.session.commit()
+  except:
+    db.session.rollback()
+    error = True
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+
+  if error:
+    flash('An error occurred. Venue ' + request.form["name"] + ' could not be listed.', 'error')
+  if not error:
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+
+  return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -412,6 +411,20 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   error = False
   print(request.form)
+
+  artistForm = ArtistForm(request.form)
+  print(artistForm.errors)
+  if not artistForm.validate():
+    return render_template('forms/new_artist.html', form=artistForm)
+
+  duplicate = Artist.query.filter(func.lower(Artist.name)==func.lower(request.form['name'])).first()
+  print(Artist.query.filter(func.lower(Artist.name)==func.lower(request.form['name'])).first())
+  if duplicate:
+    print("duplicate")
+    print(duplicate)
+    flash('Artist already created. Duplicate artist with same name not added.', 'error')
+    return render_template('pages/home.html')
+
   try:
     artist=Artist(name=request.form['name'], city=request.form['city'], state=request.form['state'], phone=request.form['phone'], genres=request.form.getlist('genres'), facebook_link=request.form['facebook_link'], image_link=request.form['image_link'])
     db.session.add(artist)
@@ -421,14 +434,15 @@ def create_artist_submission():
     error = True
     print(sys.exc_info())
   finally:
-    db.session.close()
-  
+    db.session.close()  
+
   if error:
     flash('An error occurred. Artist ' + request.form["name"] + ' could not be listed.', 'error')
   if not error:
     flash('Artist ' + request.form['name'] + ' was successfully listed!')
 
   return render_template('pages/home.html')
+
 
 
 #  Shows
@@ -488,6 +502,16 @@ def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   error = False
   print(request.form)
+
+  showForm = ShowForm(request.form)
+  if not showForm.validate():
+    return render_template('forms/new_show.html', form=showForm)
+
+  duplicate = Show.query.filter_by(venue_id=request.form['venue_id']).filter_by(artist_id=request.form['artist_id']).filter_by(start_time=request.form['start_time'])
+  if duplicate:
+    flash('Show already created. Duplicate show was not added.', 'error')
+    return render_template('pages/home.html')
+
   try:
     show = Show(venue_id=request.form['venue_id'], artist_id=request.form['artist_id'], start_time=request.form['start_time'])
     db.session.add(show)
@@ -500,7 +524,7 @@ def create_show_submission():
     db.session.close()
   
   if error:
-    flash('An error occurred. Artist ' + request.form["name"] + ' could not be listed.', 'error')
+    flash('An error occurred. Show could not be listed.', 'error')
   if not error:
     flash('Show was successfully listed!')
   
