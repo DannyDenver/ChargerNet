@@ -83,7 +83,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref=db.backref("venue"))
+    shows = db.relationship('Show', backref=db.backref("venue"), lazy="dynamic")
 
     @hybrid_property
     def upcoming_shows(self):
@@ -100,13 +100,30 @@ class Venue(db.Model):
     @hybrid_property
     def past_shows_count(self):
       return len(self.shows.filter(Show.start_time < datetime.now()).all())   
-
+    
     def __repr__(self):
         return '<Venue ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
 
-class Info:
-    def __init__(self, id, name, num_upcoming_shows):
-        self.id = id
-        self.name = name
-        self.num_upcoming_shows = num_upcoming_shows
+# class Area():
+#   city = Venue.query.filter
+#   state =
 
+#   @hybrid_property
+#   def venue
+#   venues = Venue
+
+class Area:
+  def __init__(self, city, state, venues):
+    self.city = city
+    self.state = state
+    self.venues = venues
+    def __repr__(self):
+        return '<Area ' + self.city + ' ' + self.state + '>'
+
+class InfoShort:
+  def __init__(self, id, name, num_upcoming_shows):
+    self.id = id
+    self.name = name
+    self.num_upcoming_shows = num_upcoming_shows
+    def __repr__(self):
+        return '<vn ' + self.name + ' ' + self.num_upcoming_shows + '>'
