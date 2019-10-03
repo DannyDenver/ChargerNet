@@ -26,7 +26,7 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-from models import Artist, Venue, Show, Area, InfoShort 
+from models import Artist, Venue, Area, InfoShort, Show 
 
 
 #----------------------------------------------------------------------------#
@@ -289,7 +289,7 @@ def create_artist_submission():
 @app.route('/artists/<artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):
   try:
-    Artist.query.get(artist_id).delete()
+    db.session.query(Artist).filter_by(id=artist_id).delete()
     db.session.commit()
   except:
     db.session.rollback()
@@ -372,8 +372,7 @@ if __name__ == '__main__':
     app.run()
 
 # Or specify port manually:
-'''
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-'''
+
+# if __name__ == '__main__':
+#     port = int(os.environ.get('PORT', 80))
+#     app.run(host='0.0.0.0', port=port)

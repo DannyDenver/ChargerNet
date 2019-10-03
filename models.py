@@ -42,9 +42,9 @@ class Artist(db.Model):
 
 class Show(db.Model): 
     __tablename__ = 'show'
-
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True, nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     show_venue = db.relationship("Venue")
     show_artist = db.relationship("Artist")
@@ -103,14 +103,6 @@ class Venue(db.Model):
     
     def __repr__(self):
         return '<Venue ' + str(self.id) + ' ' + self.name + ' ' + self.city + '>'
-
-# class Area():
-#   city = Venue.query.filter
-#   state =
-
-#   @hybrid_property
-#   def venue
-#   venues = Venue
 
 class Area:
   def __init__(self, city, state, venues):

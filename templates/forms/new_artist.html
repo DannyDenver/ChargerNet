@@ -12,7 +12,6 @@
           {% endif %}
       </div>
             {{ form.hidden_tag() }}
-
       <div class="form-group">
           <label>City & State</label>
           <div class="form-inline">
@@ -59,7 +58,7 @@
             <ul class="errors">{% for error in form.image_link.errors %}<li>{{ error }}</li>{% endfor %}</ul>
          {% endif %}
       </div>
-      <input type="submit" value="Create Venue" class="btn btn-primary btn-lg btn-block">
+      <input type="submit" value="Create Artist" class="btn btn-primary btn-lg btn-block">
     </form>
   </div>
 {% endblock %}

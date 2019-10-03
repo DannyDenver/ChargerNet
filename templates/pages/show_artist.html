@@ -8,7 +8,7 @@
 		</h1>
 		<h4>
 			<a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-md">Edit Artist</button></a>
-			<button href="{{ url_for('/artists/{{ artist.id }}/delete') }}"><button class="btn btn-default btn-md">Delete Artist</button></a>
+			<button id="deleteArtist" data-id="{{ artist.id }}" class="btn btn-default btn-md">Delete Artist</button></a>
 		</h4>
 		<p class="subtitle">
 			ID: {{ artist.id }}
@@ -75,6 +75,17 @@
 		{% endfor %}
 	</div>
 </section>
+<script>
+		const deleteBtn = document.getElementById('deleteArtist');
+		deleteBtn.onclick = function(e) {
+			const venueId = e.target.dataset['id'];
+			fetch('/artists/' + venueId, {
+				method: 'DELETE'
+			}).then(function() {
+				location.href = '../'
+			})
+		}
+</script>
 
 {% endblock %}
 
