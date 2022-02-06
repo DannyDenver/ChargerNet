@@ -19,16 +19,84 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime
 from sqlalchemy.orm import registry, declared_attr
+from authlib.integrations.flask_client import OAuth
+from functools import wraps
+from flask import session
+from six.moves.urllib.parse import urlencode
+from dotenv import dotenv_values
 
+env_config = dotenv_values(".env")
+print(env_config)
 #----------------------------------------------------------------------------#
-# App Config.
+# App Config. 
 #----------------------------------------------------------------------------#
 
 app = Flask(__name__)
+
+oauth = OAuth(app)
+
+auth0 = oauth.register(
+  'auth0',
+  client_id='RF0NE1fGynyjE4a4o96hwUatOVu7Iedr',
+  client_secret=env_config['SECRET'],
+  api_base_url='https://dev-u5hxbgvm.us.auth0.com',
+  access_token_url='https://dev-u5hxbgvm.us.auth0.com/oauth/token',
+  authorize_url='https://dev-u5hxbgvm.us.auth0.com/authorize',
+  client_kwargs={
+    'scope': 'openid profile email'
+  },
+)
+
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+@app.route('/callback')
+def callback_handling():
+    # Handles response from token endpoint
+    auth0.authorize_access_token()
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
+    print(userinfo)
+
+    # Store the user information in flask session.
+    session['jwt_payload'] = userinfo
+    session['profile'] = {
+        'user_id': userinfo['sub'],
+        'name': userinfo['name'],
+        'picture': userinfo['picture']
+    }
+    return redirect('/create_profile')
+  
+@app.route('/login')
+def login():
+    return auth0.authorize_redirect(redirect_uri='http://localhost:5000/callback')
+  
+def requires_auth(f):
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    if 'profile' not in session:
+      # Redirect to Login page here
+      return redirect('/')
+    return f(*args, **kwargs)
+
+  return decorated
+
+@app.route('/create_profile')
+@requires_auth
+def create_profile():
+    return render_template('pages/create_profile.html',
+                           userinfo=session['profile'],
+                           userinfo_pretty=json.dumps(session['jwt_payload'], indent=4))
+
+@app.route('/logout')
+def logout():
+    # Clear session stored data
+    session.clear()
+    # Redirect user to logout endpoint
+    params = {'returnTo': url_for('/', _external=True), 'client_id': 'RF0NE1fGynyjE4a4o96hwUatOVu7Iedr'}
+    return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 mapper_registry = registry()
 
@@ -201,7 +269,7 @@ def chargers():
 # #  Create Venue
 # #  ----------------------------------------------------------------
 
-# @app.route('/venues/create', methods=['GET'])
+# @app.route('/charger/create', methods=['GET'])
 # def create_venue_form():
 #   form = VenueForm()
 #   form.validate_on_submit()
