@@ -121,12 +121,13 @@ To start and run the local development server,
 1. Initialize and activate a virtualenv:
   ```
   $ cd YOUR_PROJECT_DIRECTORY_PATH/
-  $ virtualenv --no-site-packages env
+  $ pyton3 -m venv env
   $ source env/bin/activate
   ```
 
 2. Install the dependencies:
   ```
+  $ python -m ensurepip --upgrade
   $ pip install -r requirements.txt
   ```
 

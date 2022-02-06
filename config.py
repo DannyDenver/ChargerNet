@@ -9,4 +9,4 @@ DEBUG = True
 # Connect to the database
 
 # TODO IMPLEMENT DATABASE URL
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5444/fyyurdb'
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:wguDan1990@charger-net-database.cwxmmw6er8im.us-west-2.rds.amazonaws.com:5432'
