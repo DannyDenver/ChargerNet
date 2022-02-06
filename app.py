@@ -33,14 +33,16 @@ migrate = Migrate(app, db)
 mapper_registry = registry()
 
 @mapper_registry.as_declarative_base()
-class User(object):
+class User(db.Model):
   __tablename__ = "User"
   id = db.Column(db.Integer, primary_key=True)
   name = db.Column(db.String(50))
   phone_number = db.Column(db.String(20))
+  __mapper_args__ = {
+      'polymorphic_identity':'user'
+  }
 
 class Driver(User):
-    __tablename__ = 'Driver'
     frequent_charger = db.Column(db.Boolean)
     total_kwh_consumed = db.Column(db.Integer)
     
@@ -63,18 +65,24 @@ class Driver(User):
     def past_reservation_count(self):
       return len(self.reservations.filter(Reservation.start_time < datetime.now()).all())    
 
+    __mapper_args__ = {
+        'polymorphic_identity': 'driver'
+    }
+
     def __repr__(self):
         return '<Driver ' + str(self.id) + ' ' + self.name + ' ' + self.phone_number + '>'
 
 class Provider(User):
-  __tablename__ = "Provider"
   mailing_address = db.Column(db.String(100))
   kwh_provided = db.Column(db.Integer)
+  __mapper_args__ = {
+    'polymorphic_identity': 'provider'
+  }
 
 class Car(db.Model):
   __tablename__ = "Car"
   id = db.Column(db.Integer, primary_key=True)
-  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
+  driver_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
   make = db.Column(db.String(20))
   model = db.Column(db.String(20))
   year = db.Column(db.Integer)
@@ -83,7 +91,7 @@ class Car(db.Model):
 class Reservation(db.Model): 
   __tablename__ = 'Reservation'
   id = db.Column(db.Integer, primary_key=True)
-  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
+  driver_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
   charger_id = db.Column(db.Integer, db.ForeignKey('Charger.id'), nullable=False)
   start_time = db.Column(db.DateTime, nullable=False)
   reservation_driver = db.relationship("Driver")
