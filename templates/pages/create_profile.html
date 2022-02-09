@@ -1,3 +1,7 @@
+
+{% extends 'layouts/main.html' %}
+{% block title %}Charger NET{% endblock %}
+{% block content %}
 <div class="logged-in-box auth0-box logged-in">
     <h1 id="logo"><img src="//cdn.auth0.com/samples/auth0_logo_final_blue_RGB.png" /></h1>
     <img class="avatar" src="{{userinfo['picture']}}"/>
@@ -5,3 +9,43 @@
     <pre>{{userinfo_pretty}}</pre>
     <a class="btn btn-primary btn-lg btn-logout btn-block" href="/logout">Logout</a>
 </div>
+
+
+<div class="form-wrapper">
+    <form method="post" class="form">
+      <h3 class="form-heading">Finish your profile...</h3>
+      <img class="avatar" src="{{userinfo['picture']}}"/>
+
+      <div class="form-group">
+        <label for="name">Name</label>
+        {{ userForm.name(class_ = 'form-control', autofocus = true) }}
+          {% if userForm.name.errors %}
+            <ul class="errors">{% for error in userForm.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+      </div>
+      <div class="form-group">
+          <label for="phone">Phone</label>
+          {{ userForm.phone_number(class_ = 'form-control', placeholder='xxx-xxx-xxxx', autofocus = true) }}
+          {% if userForm.phone_number.errors %}
+            <ul class="errors">{% for error in userForm.phone_number.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="name">Mailing Address</label>
+            {{ userForm.mailing_address(class_ = 'form-control', autofocus = true) }}
+              {% if userForm.mailing_address.errors %}
+                <ul class="errors">{% for error in userForm.mailing_address.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+              {% endif %}
+          </div>
+          <div class="form-group">
+            <label for="name">Are you signing up to provide an EV charger?</label>
+            {{ userForm.is_provider(class_ = 'form-control', autofocus = true) }}
+              {% if userForm.is_provider.errors %}
+                <ul class="errors">{% for error in userForm.is_provider.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+              {% endif %}
+          </div>
+      <input type="submit" value="Create Profile" class="btn btn-primary btn-lg btn-block">
+    </form>
+  </div>
+
+{% endblock %}

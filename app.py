@@ -52,105 +52,55 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-@app.route('/callback')
-def callback_handling():
-    # Handles response from token endpoint
-    auth0.authorize_access_token()
-    resp = auth0.get('userinfo')
-    userinfo = resp.json()
-    print(userinfo)
+# mapper_registry = registry()
 
-    # Store the user information in flask session.
-    session['jwt_payload'] = userinfo
-    session['profile'] = {
-        'user_id': userinfo['sub'],
-        'name': userinfo['name'],
-        'picture': userinfo['picture']
-    }
-    return redirect('/create_profile')
-  
-@app.route('/login')
-def login():
-    return auth0.authorize_redirect(redirect_uri='http://localhost:5000/callback')
-  
-def requires_auth(f):
-  @wraps(f)
-  def decorated(*args, **kwargs):
-    if 'profile' not in session:
-      # Redirect to Login page here
-      return redirect('/')
-    return f(*args, **kwargs)
-
-  return decorated
-
-@app.route('/create_profile')
-@requires_auth
-def create_profile():
-    return render_template('pages/create_profile.html',
-                           userinfo=session['profile'],
-                           userinfo_pretty=json.dumps(session['jwt_payload'], indent=4))
-
-@app.route('/logout')
-def logout():
-    # Clear session stored data
-    session.clear()
-    # Redirect user to logout endpoint
-    params = {'returnTo': url_for('/', _external=True), 'client_id': 'RF0NE1fGynyjE4a4o96hwUatOVu7Iedr'}
-    return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
-
-mapper_registry = registry()
-
-@mapper_registry.as_declarative_base()
+# @mapper_registry.as_declarative_base()
 class User(db.Model):
-  __tablename__ = "User"
-  id = db.Column(db.Integer, primary_key=True)
+  __abstract__ = True
+  oauth_id = db.Column(db.String(100))
   name = db.Column(db.String(50))
   phone_number = db.Column(db.String(20))
-  __mapper_args__ = {
-      'polymorphic_identity':'user'
-  }
+  profile_photo=db.Column(db.String(100))
 
 class Driver(User):
-    frequent_charger = db.Column(db.Boolean)
-    total_kwh_consumed = db.Column(db.Integer)
-    
-    reservations = db.relationship("Reservation", backref=db.backref("driver"), lazy="dynamic")
-    cars = db.relationship("Car", backref=db.backref("driver"), lazy="dynamic")
+  __tablename__='Driver'
+  id = db.Column(db.Integer, primary_key=True)
+  frequent_charger = db.Column(db.Boolean)
+  total_kwh_consumed = db.Column(db.Integer)
+  
+  reservations = db.relationship("Reservation", backref=db.backref("driver"), lazy="dynamic")
+  cars = db.relationship("Car", backref=db.backref("driver"), lazy="dynamic")
 
-    @hybrid_property
-    def upcoming_reservations(self):
-      return self.reservations.filter(Reservation.start_time > datetime.now()).all()
+  @hybrid_property
+  def upcoming_reservations(self):
+    return self.reservations.filter(Reservation.start_time > datetime.now()).all()
 
-    @hybrid_property
-    def upcoming_reservation_count(self):
-      return len(self.reservations.filter(Reservation.start_time > datetime.now()).all())
+  @hybrid_property
+  def upcoming_reservation_count(self):
+    return len(self.reservations.filter(Reservation.start_time > datetime.now()).all())
 
-    @hybrid_property
-    def past_reservations(self):
-      return self.reservations.filter(Reservation.start_time < datetime.now()).all()
+  @hybrid_property
+  def past_reservations(self):
+    return self.reservations.filter(Reservation.start_time < datetime.now()).all()
 
-    @hybrid_property
-    def past_reservation_count(self):
-      return len(self.reservations.filter(Reservation.start_time < datetime.now()).all())    
+  @hybrid_property
+  def past_reservation_count(self):
+    return len(self.reservations.filter(Reservation.start_time < datetime.now()).all())    
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'driver'
-    }
 
-    def __repr__(self):
-        return '<Driver ' + str(self.id) + ' ' + self.name + ' ' + self.phone_number + '>'
+  def __repr__(self):
+      return '<Driver ' + str(self.id) + ' ' + self.name + ' ' + self.phone_number + '>'
 
 class Provider(User):
+  __tablename__='Provider'
+  id = db.Column(db.Integer, primary_key=True)
   mailing_address = db.Column(db.String(100))
   kwh_provided = db.Column(db.Integer)
-  __mapper_args__ = {
-    'polymorphic_identity': 'provider'
-  }
 
 class Car(db.Model):
   __tablename__ = "Car"
   id = db.Column(db.Integer, primary_key=True)
-  driver_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
   make = db.Column(db.String(20))
   model = db.Column(db.String(20))
   year = db.Column(db.Integer)
@@ -159,7 +109,7 @@ class Car(db.Model):
 class Reservation(db.Model): 
   __tablename__ = 'Reservation'
   id = db.Column(db.Integer, primary_key=True)
-  driver_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
   charger_id = db.Column(db.Integer, db.ForeignKey('Charger.id'), nullable=False)
   start_time = db.Column(db.DateTime, nullable=False)
   reservation_driver = db.relationship("Driver")
@@ -219,9 +169,111 @@ app.jinja_env.filters['datetime'] = format_datetime
 # Controllers.
 #----------------------------------------------------------------------------#
 
+
+@app.route('/callback')
+def callback_handling():
+    # Handles response from token endpoint
+    auth0.authorize_access_token()
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
+    print(userinfo)
+
+    session['jwt_payload'] = userinfo
+    session['profile'] = {
+        'user_id': userinfo['sub'],
+        'name': userinfo['name'],
+        'picture': userinfo['picture']
+    }
+
+    provider = Provider.query.filter(Provider.oauth_id==userinfo['sub']).first()
+    driver = Driver.query.filter(Driver.oauth_id==userinfo['sub']).first()
+
+    if provider is None and driver is None:
+      return redirect('/user/create')
+    
+    if provider is not None:
+      session['isProvider']=True
+      session['oauth_id']=provider.oauth_id
+      session['name']=provider.name
+      return render_template('pages/home.html', name=provider.name, loggedIn=True, isProvider=True)
+    else:
+      session['isProvider']=False
+      session['user']=driver
+      return render_template('pages/home.html', loggedIn=True, isProvider=False)
+
+@app.route('/login')
+def login():
+    return auth0.authorize_redirect(redirect_uri='http://localhost:5000/callback')
+  
+def requires_auth(f):
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    if 'profile' not in session:
+      # Redirect to Login page here
+      return redirect('/')
+    return f(*args, **kwargs)
+
+  return decorated
+
+@app.route('/user/create', methods=['GET'])
+@requires_auth
+def create_profile_form():
+    userForm = UserForm()
+    
+    print(session['jwt_payload']['sub'])
+
+    return render_template('pages/create_profile.html',
+                           userinfo=session['profile'],
+                           userinfo_pretty=json.dumps(session['jwt_payload'],
+                          indent=4),
+                          userForm=userForm)
+
+@app.route('/user/create', methods=['POST'])
+@requires_auth
+def create_profile_submission():
+  error = False
+  userForm = UserForm(request.form)
+
+  if not userForm.validate():
+    return render_template('pages/create_profile.html',
+                           userinfo=session['profile'],
+                           userinfo_pretty=json.dumps(session['jwt_payload'],
+                          indent=4),
+                          userForm=userForm)
+
+  if request.form['is_provider'] is 'y':
+    provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
+    db.session.add(provider)
+    db.session.commit()
+    session['isProvider']=True
+    session['user']=provider
+
+    return render_template('pages/home.html', loggedIn=True, isProvider=True)
+
+@app.route('/logout')
+def logout():
+    # Clear session stored data
+    session.clear()
+    # Redirect user to logout endpoint
+    params = {'returnTo': url_for('home', _external=True), 'client_id': 'RF0NE1fGynyjE4a4o96hwUatOVu7Iedr'}
+    return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
+
+
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+  isProvider=session.get('isProvider') if session.get('isProvider') else None
+  user = session.get('user') if session.get('user') else None
+  name = session.get('name') if session.get('name') else None
+
+  return render_template('pages/home.html',  loggedIn=True, name=name, isProvider=isProvider)
+
+@app.route('/home')
+def home():
+  isProvider=session.get('isProvider') if session.get('isProvider') else None
+  user = session.get('user') if session.get('user') else None
+  name = session.get('name') if session.get('name') else None
+
+  return render_template('pages/home.html', loggedIn=True if user else False, name=name, isProvider=isProvider)
 
 @app.route('/chargers')
 def chargers():

@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_wtf import Form
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, IntegerField, SelectMultipleField, DateTimeField
+from wtforms import StringField, SelectField, IntegerField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL, InputRequired, Regexp
 
 class ShowForm(Form):
@@ -17,203 +17,25 @@ class ShowForm(Form):
         default= datetime.today()
     )
 
-class VenueForm(Form):
+
+class UserForm(Form):
     name = StringField(
         'name', validators=[InputRequired("Please enter a name.")]
     )
-    city = StringField(
-        'city', validators=[InputRequired("Please enter a city.")]
+    phone_number = StringField(
+        'phone_number', validators=[Regexp('^[2-9]\d{2}-\d{3}-\d{4}$', 0, 'Use pattern `XXX-XXX-XXXX`')]
     )
-    state = SelectField(
-        'state', validators=[InputRequired("Please enter a state.")],
-        choices=[
-            ('AL', 'AL'),
-            ('AK', 'AK'),
-            ('AZ', 'AZ'),
-            ('AR', 'AR'),
-            ('CA', 'CA'),
-            ('CO', 'CO'),
-            ('CT', 'CT'),
-            ('DE', 'DE'),
-            ('DC', 'DC'),
-            ('FL', 'FL'),
-            ('GA', 'GA'),
-            ('HI', 'HI'),
-            ('ID', 'ID'),
-            ('IL', 'IL'),
-            ('IN', 'IN'),
-            ('IA', 'IA'),
-            ('KS', 'KS'),
-            ('KY', 'KY'),
-            ('LA', 'LA'),
-            ('ME', 'ME'),
-            ('MT', 'MT'),
-            ('NE', 'NE'),
-            ('NV', 'NV'),
-            ('NH', 'NH'),
-            ('NJ', 'NJ'),
-            ('NM', 'NM'),
-            ('NY', 'NY'),
-            ('NC', 'NC'),
-            ('ND', 'ND'),
-            ('OH', 'OH'),
-            ('OK', 'OK'),
-            ('OR', 'OR'),
-            ('MD', 'MD'),
-            ('MA', 'MA'),
-            ('MI', 'MI'),
-            ('MN', 'MN'),
-            ('MS', 'MS'),
-            ('MO', 'MO'),
-            ('PA', 'PA'),
-            ('RI', 'RI'),
-            ('SC', 'SC'),
-            ('SD', 'SD'),
-            ('TN', 'TN'),
-            ('TX', 'TX'),
-            ('UT', 'UT'),
-            ('VT', 'VT'),
-            ('VA', 'VA'),
-            ('WA', 'WA'),
-            ('WV', 'WV'),
-            ('WI', 'WI'),
-            ('WY', 'WY'),
-        ]
+    mailing_address = StringField(
+        'mailing_address', validators=[InputRequired("Please enter a mailing address.")]
     )
-    address = StringField(
-        'address', validators=[InputRequired("Please enter an address.")]
-    )
-    phone = StringField(
-        'phone', validators=[Regexp('^[2-9]\d{2}-\d{3}-\d{4}$', 0, 'Use pattern `XXX-XXX-XXXX`')]
-    )
-    image_link = StringField(
-        'image_link', validators=[URL()]
-    )
-    genres = SelectMultipleField(
-        'genres', validators=[InputRequired("Please enter venue genres.")],
-        choices=[
-            ('Alternative', 'Alternative'),
-            ('Blues', 'Blues'),
-            ('Classical', 'Classical'),
-            ('Country', 'Country'),
-            ('Electronic', 'Electronic'),
-            ('Folk', 'Folk'),
-            ('Funk', 'Funk'),
-            ('Hip-Hop', 'Hip-Hop'),
-            ('Heavy Metal', 'Heavy Metal'),
-            ('Instrumental', 'Instrumental'),
-            ('Jazz', 'Jazz'),
-            ('Musical Theatre', 'Musical Theatre'),
-            ('Pop', 'Pop'),
-            ('Punk', 'Punk'),
-            ('R&B', 'R&B'),
-            ('Reggae', 'Reggae'),
-            ('Rock n Roll', 'Rock n Roll'),
-            ('Soul', 'Soul'),
-            ('Other', 'Other'),
-        ]
-    )
-    website = StringField(
-        'website', validators=[URL()]
-    )
-    facebook_link = StringField(
-        'facebook_link', validators=[URL()]
-    )
+    is_provider = BooleanField()
+    
 
 
-class ArtistForm(Form):
+class DriverForm(Form):
     name = StringField(
-        'name', validators=[InputRequired()]
+        'name', validators=[InputRequired("Please enter a name.")]
     )
-    city = StringField(
-        'city', validators=[InputRequired()]
-    )
-    state = SelectField(
-        'state', validators=[InputRequired()],
-        choices=[
-            ('AL', 'AL'),
-            ('AK', 'AK'),
-            ('AZ', 'AZ'),
-            ('AR', 'AR'),
-            ('CA', 'CA'),
-            ('CO', 'CO'),
-            ('CT', 'CT'),
-            ('DE', 'DE'),
-            ('DC', 'DC'),
-            ('FL', 'FL'),
-            ('GA', 'GA'),
-            ('HI', 'HI'),
-            ('ID', 'ID'),
-            ('IL', 'IL'),
-            ('IN', 'IN'),
-            ('IA', 'IA'),
-            ('KS', 'KS'),
-            ('KY', 'KY'),
-            ('LA', 'LA'),
-            ('ME', 'ME'),
-            ('MT', 'MT'),
-            ('NE', 'NE'),
-            ('NV', 'NV'),
-            ('NH', 'NH'),
-            ('NJ', 'NJ'),
-            ('NM', 'NM'),
-            ('NY', 'NY'),
-            ('NC', 'NC'),
-            ('ND', 'ND'),
-            ('OH', 'OH'),
-            ('OK', 'OK'),
-            ('OR', 'OR'),
-            ('MD', 'MD'),
-            ('MA', 'MA'),
-            ('MI', 'MI'),
-            ('MN', 'MN'),
-            ('MS', 'MS'),
-            ('MO', 'MO'),
-            ('PA', 'PA'),
-            ('RI', 'RI'),
-            ('SC', 'SC'),
-            ('SD', 'SD'),
-            ('TN', 'TN'),
-            ('TX', 'TX'),
-            ('UT', 'UT'),
-            ('VT', 'VT'),
-            ('VA', 'VA'),
-            ('WA', 'WA'),
-            ('WV', 'WV'),
-            ('WI', 'WI'),
-            ('WY', 'WY'),
-        ]
-    )
-    phone = StringField(
-        'phone', validators=[Regexp('^[2-9]\d{2}-\d{3}-\d{4}$')]
-    )
-    image_link = StringField(
-        'image_link', validators=[URL()]
-    )
-    genres = SelectMultipleField(
-        'genres', validators=[InputRequired()],
-        choices=[
-            ('Alternative', 'Alternative'),
-            ('Blues', 'Blues'),
-            ('Classical', 'Classical'),
-            ('Country', 'Country'),
-            ('Electronic', 'Electronic'),
-            ('Folk', 'Folk'),
-            ('Funk', 'Funk'),
-            ('Hip-Hop', 'Hip-Hop'),
-            ('Heavy Metal', 'Heavy Metal'),
-            ('Instrumental', 'Instrumental'),
-            ('Jazz', 'Jazz'),
-            ('Musical Theatre', 'Musical Theatre'),
-            ('Pop', 'Pop'),
-            ('Punk', 'Punk'),
-            ('R&B', 'R&B'),
-            ('Reggae', 'Reggae'),
-            ('Rock n Roll', 'Rock n Roll'),
-            ('Soul', 'Soul'),
-            ('Other', 'Other'),
-        ]
-    )
-    facebook_link = StringField(
-        'facebook_link', validators=[URL()]
+    phone_number = StringField(
+        'phone_number', validators=[Regexp('^[2-9]\d{2}-\d{3}-\d{4}$', 0, 'Use pattern `XXX-XXX-XXXX`')]
     )
