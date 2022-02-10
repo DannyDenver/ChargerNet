@@ -39,3 +39,12 @@ class DriverForm(Form):
     phone_number = StringField(
         'phone_number', validators=[Regexp('^[2-9]\d{2}-\d{3}-\d{4}$', 0, 'Use pattern `XXX-XXX-XXXX`')]
     )
+
+class ChargerRegistrationForm(Form):
+    charger_type = SelectField('Charger Type',
+        choices=[('Level 1', 'Level 1'), ('Level 2', 'Level 2'), ('Level 3', 'Level 3')],
+        validators=[InputRequired("Please enter a charger type.")])
+    location = StringField(
+        'location', validators=[InputRequired("Please enter a GPS Location.")]
+    )
+    covered_parking = BooleanField()

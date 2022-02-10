@@ -41,15 +41,14 @@
     <!-- Fixed navbar -->
     <nav class="navbar navbar-default">
       <div class="container-fluid">
-          <div class="navbar-header">
-              <a class="navbar-brand" href="#"><b>Charger Net</b></a>
-            </div>
-
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#"><b>Charger Net</b></a>
+        </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
               <li><a href="#">Find Charger</a></li>
               {% if isProvider and loggedIn %}
-              <li><a href="#">Register Charger</a></li>
+              <li><a href="/chargers/register">Register Charger</a></li>
               <li><a href="#">View Reservations</a></li>
               {% elif loggedIn%}
               <li><a href="#">Register Car</a></li>

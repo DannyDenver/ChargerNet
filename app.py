@@ -133,6 +133,7 @@ class Charger(db.Model):
     __tablename__ = 'Charger'
 
     id = db.Column(db.Integer, primary_key=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey('Provider.id'), nullable=False)
     charger_type = db.Column(db.String(20))
     location = db.Column(db.String(100))
     covered_parking = db.Column(db.Boolean)
@@ -241,7 +242,7 @@ def create_profile_submission():
                           indent=4),
                           userForm=userForm)
 
-  if request.form['is_provider'] is 'y':
+  if request.form['is_provider'] == 'y':
     provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
     db.session.add(provider)
     db.session.commit()
@@ -275,9 +276,29 @@ def home():
 
   return render_template('pages/home.html', loggedIn=True if user else False, name=name, isProvider=isProvider)
 
-@app.route('/chargers')
-def chargers():
-  return render_template('pages/home.html')
+@app.route('/chargers/register', methods=['GET'])
+@requires_auth
+def register_charger_form():
+  chargerForm = ChargerRegistrationForm()
+
+  return render_template('pages/register_charger.html', chargerForm=chargerForm)
+
+@app.route('/chargers/register', methods=['POST'])
+@requires_auth
+def register_charger_submission():
+  chargerForm = ChargerRegistrationForm(request.form)
+
+  if not chargerForm.validate():
+    return render_template('pages/register_charger.html',
+                          chargerForm=chargerForm)
+
+  provider = Provider.query.filter_by(oauth_id=session['oauth_id']).first()
+
+  charger=Charger(provider_id=provider.id, charger_type=request.form.get('charger_type'), location=request.form.get('location'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+  db.session.add(charger)
+  db.session.commit()
+
+  return render_template('pages/home.html', loggedIn=True, isProvider=True)
 
 #  Venues
 #  ----------------------------------------------------------------
