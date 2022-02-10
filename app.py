@@ -135,9 +135,9 @@ class Charger(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     provider_id = db.Column(db.Integer, db.ForeignKey('Provider.id'), nullable=False)
     charger_type = db.Column(db.String(20))
-    location = db.Column(db.String(100))
+    location_longitude = db.Column(db.String(100))
+    location_latitude = db.Column(db.String(100))
     covered_parking = db.Column(db.Boolean)
-
     
     def __repr__(self):
         return '<Charger ' + self.id + ' ' + self.charger_type + ' covered parking: ' + self.covered_parking + '>'
@@ -266,7 +266,7 @@ def index():
   user = session.get('user') if session.get('user') else None
   name = session.get('name') if session.get('name') else None
 
-  return render_template('pages/home.html',  loggedIn=True, name=name, isProvider=isProvider)
+  return render_template('pages/home.html', loggedIn=True, name=name, isProvider=isProvider)
 
 @app.route('/home')
 def home():
@@ -294,7 +294,7 @@ def register_charger_submission():
 
   provider = Provider.query.filter_by(oauth_id=session['oauth_id']).first()
 
-  charger=Charger(provider_id=provider.id, charger_type=request.form.get('charger_type'), location=request.form.get('location'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+  charger=Charger(provider_id=provider.id, charger_type=request.form.get('charger_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
   db.session.add(charger)
   db.session.commit()
 
