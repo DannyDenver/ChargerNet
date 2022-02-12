@@ -24,6 +24,7 @@ from functools import wraps
 from flask import session
 from six.moves.urllib.parse import urlencode
 from dotenv import dotenv_values
+from tables.charger_table import ChargerTable
 
 env_config = dotenv_values(".env")
 print(env_config)
@@ -140,7 +141,7 @@ class Charger(db.Model):
     covered_parking = db.Column(db.Boolean)
     
     def __repr__(self):
-        return '<Charger ' + self.id + ' ' + self.charger_type + ' covered parking: ' + self.covered_parking + '>'
+        return f'<Charger {str(self.id)} type: {self.charger_type} covered parking: {str(self.covered_parking)}, lat: {self.location_latitude}, long: {self.location_longitude}>'
 
 class InfoShort:
   def __init__(self, id, name, num_upcoming_reservations):
@@ -193,14 +194,19 @@ def callback_handling():
       return redirect('/user/create')
     
     if provider is not None:
-      session['isProvider']=True
-      session['oauth_id']=provider.oauth_id
-      session['name']=provider.name
-      return render_template('pages/home.html', name=provider.name, loggedIn=True, isProvider=True)
+      session['user_profile'] = {
+        'user_id': provider.id,
+        'name': provider.name,
+        'isProvider': True
+      }
+      return render_template('pages/home.html', user_profile=session['user_profile'])
     else:
-      session['isProvider']=False
-      session['user']=driver
-      return render_template('pages/home.html', loggedIn=True, isProvider=False)
+      session['user_profile'] = {
+        'user_id': provider.id,
+        'name': provider.name,
+        'isProvider': False
+      }
+      return render_template('pages/home.html', user_profile=session['user_profile'])
 
 @app.route('/login')
 def login():
@@ -262,26 +268,17 @@ def logout():
 
 @app.route('/')
 def index():
-  isProvider=session.get('isProvider') if session.get('isProvider') else None
-  user = session.get('user') if session.get('user') else None
-  name = session.get('name') if session.get('name') else None
-
-  return render_template('pages/home.html', loggedIn=True, name=name, isProvider=isProvider)
-
-@app.route('/home')
-def home():
-  isProvider=session.get('isProvider') if session.get('isProvider') else None
-  user = session.get('user') if session.get('user') else None
-  name = session.get('name') if session.get('name') else None
-
-  return render_template('pages/home.html', loggedIn=True if user else False, name=name, isProvider=isProvider)
+  if session.get('user_profile'):
+    return render_template('pages/home.html', user_profile=session.get('user_profile'))
+  
+  return render_template('pages/home.html')
 
 @app.route('/chargers/register', methods=['GET'])
 @requires_auth
 def register_charger_form():
   chargerForm = ChargerRegistrationForm()
 
-  return render_template('pages/register_charger.html', chargerForm=chargerForm)
+  return render_template('pages/register_charger.html', chargerForm=chargerForm, user_profile=session['user_profile'])
 
 @app.route('/chargers/register', methods=['POST'])
 @requires_auth
@@ -292,13 +289,38 @@ def register_charger_submission():
     return render_template('pages/register_charger.html',
                           chargerForm=chargerForm)
 
-  provider = Provider.query.filter_by(oauth_id=session['oauth_id']).first()
-
-  charger=Charger(provider_id=provider.id, charger_type=request.form.get('charger_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+  charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
   db.session.add(charger)
   db.session.commit()
 
-  return render_template('pages/home.html', loggedIn=True, isProvider=True)
+  return render_template('pages/home.html', user_profile=session['user_profile'])
+
+
+@app.route('/chargers/your-chargers', methods=["GET"])
+@requires_auth
+def your_chargers():
+  chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
+  charger_table = ChargerTable(chargers)
+
+  return render_template('pages/your_chargers.html', table=charger_table, user_profile=session['user_profile'])
+
+@app.route('/chargers/your-chargers/<id>', methods=["POST"])
+@requires_auth
+def your_chargers_delete(id):
+  try:
+    db.session.query(Charger).filter_by(provider_id=session.get('user_profile').get('user_id')).filter_by(id=id).delete()
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+  chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
+  charger_table = ChargerTable(chargers)
+
+  return render_template('pages/your_chargers.html', table=charger_table, user_profile=session['user_profile'])
+
+
+
 
 #  Venues
 #  ----------------------------------------------------------------

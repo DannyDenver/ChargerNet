@@ -44,7 +44,10 @@ class ChargerRegistrationForm(Form):
     charger_type = SelectField('Charger Type',
         choices=[('Level 1', 'Level 1'), ('Level 2', 'Level 2'), ('Level 3', 'Level 3')],
         validators=[InputRequired("Please enter a charger type.")])
-    location = StringField(
-        'location', validators=[InputRequired("Please enter a GPS Location.")]
+    location_longitude = StringField(
+        'location_longitude', validators=[InputRequired("Please enter a GPS longitude.")]
+    )
+    location_latitude = StringField(
+        'location_latitude', validators=[InputRequired("Please enter a GPS latitude.")]
     )
     covered_parking = BooleanField()
