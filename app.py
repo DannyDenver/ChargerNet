@@ -25,6 +25,7 @@ from flask import session
 from six.moves.urllib.parse import urlencode
 from dotenv import dotenv_values
 from tables.charger_table import ChargerTable
+from tables.cars_table import CarTable
 
 env_config = dotenv_values(".env")
 print(env_config)
@@ -105,7 +106,7 @@ class Car(db.Model):
   make = db.Column(db.String(20))
   model = db.Column(db.String(20))
   year = db.Column(db.Integer)
-  charger_type = db.Column(db.String(20))
+  plug_type = db.Column(db.String(20))
 
 class Reservation(db.Model): 
   __tablename__ = 'Reservation'
@@ -138,6 +139,7 @@ class Charger(db.Model):
     charger_type = db.Column(db.String(20))
     location_longitude = db.Column(db.String(100))
     location_latitude = db.Column(db.String(100))
+    plug_type = db.Column(db.String(20))
     covered_parking = db.Column(db.Boolean)
     
     def __repr__(self):
@@ -202,8 +204,8 @@ def callback_handling():
       return render_template('pages/home.html', user_profile=session['user_profile'])
     else:
       session['user_profile'] = {
-        'user_id': provider.id,
-        'name': provider.name,
+        'user_id': driver.id,
+        'name': driver.name,
         'isProvider': False
       }
       return render_template('pages/home.html', user_profile=session['user_profile'])
@@ -242,27 +244,35 @@ def create_profile_submission():
   userForm = UserForm(request.form)
 
   if not userForm.validate():
-    return render_template('pages/create_profile.html',
-                           userinfo=session['profile'],
-                           userinfo_pretty=json.dumps(session['jwt_payload'],
-                          indent=4),
-                          userForm=userForm)
+    return render_template('pages/create_profile.html', userForm=userForm)
 
-  if request.form['is_provider'] == 'y':
+  if request.form.get('is_provider', None) == 'y':
     provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
     db.session.add(provider)
     db.session.commit()
-    session['isProvider']=True
-    session['user']=provider
+    session['user_profile'] = {
+      'user_id': provider.id,
+      'name': provider.name,
+      'isProvider': True
+    }
+  else: 
+    driver=Driver(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'])
+    db.session.add(driver)
+    db.session.commit()
+    session['user_profile'] = {
+      'user_id': driver.id,
+      'name': driver.name,
+      'isProvider': False
+    }
 
-    return render_template('pages/home.html', loggedIn=True, isProvider=True)
+    return render_template('pages/home.html', user_profile=session.get('user_profile'))
 
 @app.route('/logout')
 def logout():
     # Clear session stored data
     session.clear()
     # Redirect user to logout endpoint
-    params = {'returnTo': url_for('home', _external=True), 'client_id': 'RF0NE1fGynyjE4a4o96hwUatOVu7Iedr'}
+    params = {'returnTo': url_for('index', _external=True), 'client_id': 'RF0NE1fGynyjE4a4o96hwUatOVu7Iedr'}
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 
@@ -289,7 +299,7 @@ def register_charger_submission():
     return render_template('pages/register_charger.html',
                           chargerForm=chargerForm)
 
-  charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+  charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
   db.session.add(charger)
   db.session.commit()
 
@@ -319,7 +329,53 @@ def your_chargers_delete(id):
 
   return render_template('pages/your_chargers.html', table=charger_table, user_profile=session['user_profile'])
 
+@app.route('/cars/register', methods=['GET'])
+@requires_auth
+def register_car_form():
+  carForm = CarRegistrationForm()
 
+  return render_template('pages/register_car.html', carForm=carForm, user_profile=session['user_profile'])
+
+@app.route('/cars/register', methods=['POST'])
+@requires_auth
+def register_car_submission():
+  carForm = CarRegistrationForm(request.form)
+
+  if not carForm.validate():
+    return render_template('pages/register_car.html',
+                          carForm=carForm)
+
+  car=Car(driver_id=session['user_profile']['user_id'], make=request.form.get('make'), model=request.form.get('model'), year=request.form.get('year'), plug_type=request.form.get('plug_type'))
+  db.session.add(car)
+  db.session.commit()
+
+  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars_table = CarTable(cars)
+
+  return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
+
+@app.route('/cars', methods=["GET"])
+@requires_auth
+def your_cars():
+  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars_table = CarTable(cars)
+
+  return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
+
+@app.route('/cars/<id>', methods=["POST"])
+@requires_auth
+def your_car_delete(id):
+  try:
+    db.session.query(Car).filter_by(driver_id=session.get('user_profile').get('user_id')).filter_by(id=id).delete()
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars_table = CarTable(cars)
+
+  return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
 
 
 #  Venues

@@ -52,8 +52,8 @@
               <li><a href="#">View Reservations</a></li>
               {% elif user_profile %}
               <li><a href="#">Find Charger</a></li>
-              <li><a href="#">Register Car</a></li>
-              <li><a href="#">Schedule Charger Reservation</a></li>
+              <li {% if request.endpoint == 'register_car_form' %} class="active" {% endif %}><a href="{{ url_for('register_car_form') }}">Register your Car</a></li>
+              <li {% if request.endpoint == 'your_cars' or request.endpoint == 'register_car_submission' %} class="active" {% endif %}><a  href="{{ url_for('your_cars') }}">Your Cars</a></li>
               {% endif %}
             </ul>
             <form class="navbar-form navbar-left">

@@ -4,6 +4,7 @@ class ChargerTable(Table):
     classes=['table']
     id = Col('Charger ID')
     charger_type = Col('Charger Type')
+    plug_type = Col('Plug Type')
     location_latitude = Col('Location Latitude')
     location_longitude = Col('Location Longitude')
     covered_parking = Col('Covered Parking?')
