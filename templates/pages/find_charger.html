@@ -20,7 +20,7 @@
   {% for charger in chargers %}
 
   L.marker([{{charger.location_latitude}}, {{charger.location_longitude}}]).addTo(map)
-  .bindPopup("<strong>{{charger.plug_type}} - {{charger.charger_type}}</strong>").openPopup();
+  .bindPopup("<a href='/chargers/{{charger.id}}' ><strong>{{charger.plug_type}} - {{charger.charger_type}}</strong></a>").openPopup();
 
   {% endfor%}
   

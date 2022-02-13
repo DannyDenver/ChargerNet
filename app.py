@@ -381,6 +381,14 @@ def find_charger():
 
   return render_template('pages/find_charger.html', chargers=chargers, user_profile=session['user_profile'])
 
+@app.route('/chargers/<id>', methods=["GET"])
+@requires_auth
+def reserve_charger(id):
+  charger = Charger.query.get(id)
+  print(charger)
+
+  return render_template('pages/reserve_charger.html', charger=charger, user_profile=session['user_profile'])
+
 
 #  Venues
 #  ----------------------------------------------------------------
