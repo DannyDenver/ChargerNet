@@ -1,0 +1,11 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Charger NET{% endblock %}
+{% block content %}
+
+<h2>{{ user_profile.name}}'s Upcoming Reservations</h2>
+{{ upcoming_reservation_table }}
+
+<h2>{{ user_profile.name}}'s Past Reservations</h2>
+{{ past_reservation_table }}
+
+{% endblock %}

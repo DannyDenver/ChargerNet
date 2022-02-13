@@ -26,6 +26,10 @@ from six.moves.urllib.parse import urlencode
 from dotenv import dotenv_values
 from tables.charger_table import ChargerTable
 from tables.cars_table import CarTable
+from tables.reservations_table import ReservationTable, ReservationTableItem, ReservationDriverTableItem, ReservationDriverTable
+from datetime import datetime
+from sqlalchemy.orm import backref
+
 
 env_config = dotenv_values(".env")
 print(env_config)
@@ -67,8 +71,8 @@ class Driver(User):
   frequent_charger = db.Column(db.Boolean)
   total_kwh_consumed = db.Column(db.Integer)
   
-  reservations = db.relationship("Reservation", backref=db.backref("driver"), lazy="dynamic")
-  cars = db.relationship("Car", backref=db.backref("driver"), lazy="dynamic")
+  reservations = db.relationship("Reservation", backref=db.backref("driver", cascade="all,delete"), lazy="dynamic")
+  cars = db.relationship("Car", backref=db.backref("driver", cascade="all,delete"), lazy="dynamic")
 
   @hybrid_property
   def upcoming_reservations(self):
@@ -104,16 +108,19 @@ class Car(db.Model):
   model = db.Column(db.String(20))
   year = db.Column(db.Integer)
   plug_type = db.Column(db.String(20))
+  reservations = db.relationship('Reservation', backref="car", cascade='all, delete')
 
 class Reservation(db.Model): 
   __tablename__ = 'Reservation'
   id = db.Column(db.Integer, primary_key=True)
-  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
-  charger_id = db.Column(db.Integer, db.ForeignKey('Charger.id'), nullable=False)
+  driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id', ondelete='CASCADE'), nullable=False)
+  car_id = db.Column(db.Integer, db.ForeignKey('Car.id', ondelete='CASCADE'), nullable=False)
+  charger_id = db.Column(db.Integer, db.ForeignKey('Charger.id', ondelete='CASCADE'), nullable=False)
   start_time = db.Column(db.DateTime, nullable=False)
   end_time = db.Column(db.DateTime, nullable=False)
-  reservation_driver = db.relationship("Driver")
-  reservation_charger = db.relationship("Charger")
+  reservation_driver = db.relationship("Driver", backref=backref("reservation", cascade="all,delete"))
+  reservation_charger = db.relationship("Charger", backref=backref("reservation", cascade="all,delete"))
+  reservation_car = db.relationship("Car", backref=backref("reservation", cascade="all,delete"))
 
   @hybrid_property
   def driver_name(self):
@@ -131,7 +138,6 @@ class Reservation(db.Model):
 
 class Charger(db.Model): 
     __tablename__ = 'Charger'
-
     id = db.Column(db.Integer, primary_key=True)
     provider_id = db.Column(db.Integer, db.ForeignKey('Provider.id'), nullable=False)
     charger_type = db.Column(db.String(20))
@@ -139,7 +145,9 @@ class Charger(db.Model):
     location_latitude = db.Column(db.String(100))
     plug_type = db.Column(db.String(20))
     covered_parking = db.Column(db.Boolean)
-    
+    provider = db.relationship("Provider")
+    reservations = db.relationship('Reservation', cascade='all, delete', passive_deletes=True, backref="charger")
+
     def __repr__(self):
         return f'<Charger {str(self.id)} type: {self.charger_type} covered parking: {str(self.covered_parking)}, lat: {self.location_latitude}, long: {self.location_longitude}>'
 
@@ -191,7 +199,8 @@ def callback_handling():
     driver = Driver.query.filter(Driver.oauth_id==userinfo['sub']).first()
 
     if provider is None and driver is None:
-      return redirect('/user/create')
+      print('creating profile')
+      return redirect(url_for('create_profile_form'))
     
     if provider is not None:
       session['user_profile'] = {
@@ -232,40 +241,42 @@ def create_profile_form():
     print(session['jwt_payload']['sub'])
 
     return render_template('pages/create_profile.html',
-                           userinfo=session['profile'],
-                           userinfo_pretty=json.dumps(session['jwt_payload'],
-                          indent=4),
-                          userForm=userForm)
+                            user_profile=session['profile'],
+                            userForm=userForm)
 
 @app.route('/user/create', methods=['POST'])
 @requires_auth
 def create_profile_submission():
+  print('creating profile post')
   error = False
   userForm = UserForm(request.form)
 
   if not userForm.validate():
-    return render_template('pages/create_profile.html', userForm=userForm)
+    print('not valid')
+    return render_template('pages/create_profile.html', user_profile=session['profile'], userForm=userForm)
 
   if request.form.get('is_provider', None) == 'y':
     provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
     db.session.add(provider)
     db.session.commit()
     session['user_profile'] = {
-      'user_id': provider.id,
-      'name': provider.name,
-      'isProvider': True
-    }
+        'user_id': provider.id,
+        'name': provider.name,
+        'picture': provider.profile_photo,
+        'isProvider': True
+      }
   else: 
     driver=Driver(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'])
     db.session.add(driver)
     db.session.commit()
     session['user_profile'] = {
-      'user_id': driver.id,
-      'name': driver.name,
-      'isProvider': False
-    }
+        'user_id': driver.id,
+        'name': driver.name,
+        'picture': driver.profile_photo,
+        'isProvider': False
+      }
 
-    return render_template('pages/home.html', user_profile=session.get('user_profile'))
+  return render_template('pages/home.html', user_profile=session['user_profile'])
 
 @app.route('/logout')
 def logout():
@@ -279,7 +290,7 @@ def logout():
 @app.route('/')
 def index():
   if session.get('user_profile'):
-    return render_template('pages/home.html', user_profile=session.get('user_profile'))
+    return render_template('pages/home.html', user_profile=session['user_profile'])
   
   return render_template('pages/home.html')
 
@@ -293,7 +304,7 @@ def register_charger_form():
 @app.route('/chargers/register', methods=['POST'])
 @requires_auth
 def register_charger_submission():
-  chargerForm = ChargerRegistrationForm(request.form)
+  chargerForm = ChargerRegistrationForm(request.form)  
 
   if not chargerForm.validate():
     return render_template('pages/register_charger.html',
@@ -304,7 +315,7 @@ def register_charger_submission():
   db.session.add(charger)
   db.session.commit()
 
-  return render_template('pages/home.html', user_profile=session['user_profile'])
+  return redirect(url_for('your_chargers'))
 
 
 @app.route('/chargers/your-chargers', methods=["GET"])
@@ -350,7 +361,7 @@ def register_car_submission():
   db.session.add(car)
   db.session.commit()
 
-  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars = Car.query.filter(Car.driver_id==session['user_profile']['user_id']).all()
   cars_table = CarTable(cars)
 
   return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
@@ -358,7 +369,7 @@ def register_car_submission():
 @app.route('/cars', methods=["GET"])
 @requires_auth
 def your_cars():
-  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars = Car.query.filter(Car.driver_id==session['user_profile']['user_id']).all()
   cars_table = CarTable(cars)
 
   return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
@@ -367,13 +378,13 @@ def your_cars():
 @requires_auth
 def your_car_delete(id):
   try:
-    db.session.query(Car).filter_by(driver_id=session.get('user_profile').get('user_id')).filter_by(id=id).delete()
+    db.session.query(Car).filter_by(driver_id=session['user_profile']['user_id']).filter_by(id=id).delete()
     db.session.commit()
   except:
     db.session.rollback()
   finally:
     db.session.close()
-  cars = Car.query.filter(Car.driver_id==session.get('user_profile').get('user_id')).all()
+  cars = Car.query.filter(Car.driver_id==session['user_profile']['user_id']).all()
   cars_table = CarTable(cars)
 
   return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
@@ -390,19 +401,78 @@ def find_charger():
 def reserve_charger(id):
   charger = Charger.query.get(id)
 
-  return render_template('pages/reserve_charger.html', charger=charger, user_profile=session['user_profile'])
+  cars = Car.query.filter_by(driver_id=session['user_profile']['user_id']).filter_by(plug_type=charger.plug_type).all()
+
+  return render_template('pages/reserve_charger.html', charger=charger, cars=cars, user_profile=session['user_profile'])
 
 @app.route('/chargers/<id>', methods=["POST"])
 @requires_auth
 def reserve_charger_submission(id):
   charger = Charger.query.get(id)
+  time_error = []
 
-  reservation=Reservation(driver_id=session['user_profile']['user_id'], charger_id=request.form.get('charger_id'), start_time=request.form.get('start_time'), end_time=request.form.get('end_time'))
+  if request.form.get('start_time') > request.form.get('end_time'):
+    time_error.append('Start time must be before end time')
+    cars = Car.query.filter_by(driver_id=session['user_profile']['user_id']).filter_by(plug_type=charger.plug_type).all()
+    return render_template('pages/reserve_charger.html', charger=charger, cars=cars, time_error=time_error, user_profile=session['user_profile'])
+
+
+
+  reservation=Reservation(driver_id=session['user_profile']['user_id'], car_id=request.form.get('car_id'), charger_id=request.form.get('charger_id'), start_time=request.form.get('start_time'), end_time=request.form.get('end_time'))
   
   db.session.add(reservation)
   db.session.commit()
-  return render_template('pages/reserve_charger.html', charger=charger, user_profile=session['user_profile'])
+  
+  return redirect(url_for('your_reservations'))
 
+
+@app.route('/your-reservations', methods=['GET'])
+@requires_auth
+def your_reservations():
+  past_reservation_table_items = []
+  upcoming_reservation_table_items = []
+
+  if session['user_profile']['isProvider'] == True:
+    chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
+    ids = [charger.id for charger in chargers]
+    reservations = Reservation.query.filter(Reservation.charger_id.in_(ids)).order_by(Reservation.start_time).all()
+    for res in reservations:
+      location = str(res.reservation_charger.location_latitude + ", " + res.reservation_charger.location_longitude)
+      if res.end_time < datetime.now():
+        past_reservation_table_items.append(ReservationTableItem(res.id, res.reservation_driver.name, f'{res.reservation_car.make} - {res.reservation_car.model}', res.charger_id, location, res.start_time, res.end_time))
+      else: 
+        upcoming_reservation_table_items.append(ReservationTableItem(res.id, res.reservation_driver.name, f'{res.reservation_car.make} - {res.reservation_car.model}', res.charger_id, location, res.start_time, res.end_time))
+
+    past_reservation_table = ReservationTable(past_reservation_table_items)
+    upcoming_reservation_table = ReservationTable(upcoming_reservation_table_items)
+  else:
+    reservations = Reservation.query.filter(Reservation.driver_id==session['user_profile']['user_id']).order_by(Reservation.start_time).all()
+    for res in reservations:
+      location = str(res.reservation_charger.location_latitude + ", " + res.reservation_charger.location_longitude)
+      if res.end_time < datetime.now(): 
+        past_reservation_table_items.append(ReservationDriverTableItem(res.id, res.reservation_charger.provider.name, res.charger_id, f'{res.reservation_car.make} - {res.reservation_car.model}', location, res.start_time, res.end_time))
+      else: 
+        upcoming_reservation_table_items.append(ReservationDriverTableItem(res.id, res.reservation_charger.provider.name, res.charger_id, f'{res.reservation_car.make} - {res.reservation_car.model}', location, res.start_time, res.end_time))
+
+    past_reservation_table = ReservationDriverTable(past_reservation_table_items)
+    upcoming_reservation_table = ReservationDriverTable(upcoming_reservation_table_items)
+
+  return render_template('pages/your_reservations.html', upcoming_reservation_table=upcoming_reservation_table, past_reservation_table=past_reservation_table, user_profile=session['user_profile'])
+
+@app.route('/reservations/<id>', methods=["POST"])
+@requires_auth
+def your_reservation_delete(id):
+  try:
+    print(id)
+    db.session.query(Reservation).filter_by(id=id).delete()
+    db.session.commit()
+  except:
+    print('exception thrown')
+    db.session.rollback()
+  finally:
+    db.session.close()
+
+  return redirect(url_for('your_reservations'))
 
 #  Venues
 #  ----------------------------------------------------------------

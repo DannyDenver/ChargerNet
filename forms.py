@@ -71,20 +71,6 @@ car_makes = ["Abarth",
 
 plug_choices = [('Type 1', 'Type 1'),('Type 2', 'Type 2'), ('CSS', 'CSS'), ('CHAdeMO', 'CHAdeMO')]
 
-class ShowForm(Form):
-    artist_id = IntegerField(
-        'artist_id', validators=[InputRequired()]
-    )
-    venue_id = IntegerField(
-        'venue_id', validators=[InputRequired()]
-    )
-    start_time = DateTimeField(
-        'start_time',
-        validators=[DataRequired()],
-        default= datetime.today()
-    )
-
-
 class UserForm(Form):
     name = StringField(
         'name', validators=[InputRequired("Please enter a name.")]

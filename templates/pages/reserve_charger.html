@@ -46,18 +46,33 @@
                         <input type="hidden" id="charger_id" name="charger_id" value="{{charger.id}}">
 
                         <h3 class="form-heading">Schedule Reservation</h3>
-
-                        <!-- add select car -->
+                        {% if cars %}
+                        <div class="form-group">
+                                <label for="car_id">Select Compatible Car: </label>    
+                                <select name= car_id >
+                                    {% for car in cars %}
+                                    <option value= "{{car.id}}" >{{car.make}}-{{car.model}}-{{car.year}}</option>
+                                    {% endfor %}
+                                </select>
+                                
+                            </div>
                         <div class="form-group">
                             <label for="start_time">Start Time</label>    
                             <input class="form-control" type="text" name="start_time" id="startdate" />
+                            {% if time_error %}
+                            <ul class="errors">{% for error in time_error %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
                         </div>
                         <div class="form-group">
                             <label for="end_time">End Time</label>
                             <input class="form-control" type="text" name="end_time" id="enddate" />
                         </div>
+                        <input type="submit" value="Schedule Reservation" class="btn btn-primary btn-lg btn-block">
+                        {% else %}
+                        <p><i>No compatible car. </i></p>   
+
+                        {% endif %}
                         
-                      <input type="submit" value="Schedule Reservation" class="btn btn-primary btn-lg btn-block">
                     </form>
                   </div>
         </div>

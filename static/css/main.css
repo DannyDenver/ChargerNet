@@ -222,11 +222,11 @@ h2.monospace {
 }
 
 .navbar-default {
-  background-color: #ffc63a;
-  border-color: #ffc63a;
+  background-color: #ffc63a !important;
+  border-color: #ffc63a !important;
 }
 
 .navbar-default .navbar-nav>li>a {
-  color:#676666;
-  font-size: 16px
+  color:#676666 !important;
+  font-size: 16px !important;
 }
