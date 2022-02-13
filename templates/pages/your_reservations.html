@@ -5,7 +5,36 @@
 <h2>{{ user_profile.name}}'s Upcoming Reservations</h2>
 {{ upcoming_reservation_table }}
 
+<div id="map" style="height: 500px"></div>
+{% block javascript %}
+<script type="text/javascript">
+  // The first parameter are the coordinates of the center of the map
+  // The second parameter is the zoom level
+  var map = L.map('map').setView([39.7392, -104.9903], 11);
+  
+  // {s}, {z}, {x} and {y} are placeholders for map tiles
+  // {x} and {y} are the x/y of where you are on the map
+  // {z} is the zoom level
+  // {s} is the subdomain of cartodb
+    var layer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+  });
+
+  {% for res in reservations %}
+    
+    L.marker([{{res.reservation_charger.location_latitude}}, {{res.reservation_charger.location_longitude}}]).addTo(map)
+    .bindPopup("<div href='#'><strong>{{res.start_time}} - {{res.reservation_car.make}}</strong></div>").openPopup();
+  
+  {% endfor%}
+  
+  // Now add the layer onto the map
+  map.addLayer(layer);
+</script>
+{% endblock %}
+
 <h2>{{ user_profile.name}}'s Past Reservations</h2>
 {{ past_reservation_table }}
+
+
 
 {% endblock %}

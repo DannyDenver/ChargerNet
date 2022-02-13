@@ -431,9 +431,9 @@ def reserve_charger_submission(id):
 def your_reservations():
   past_reservation_table_items = []
   upcoming_reservation_table_items = []
-
   if session['user_profile']['isProvider'] == True:
     chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
+    
     ids = [charger.id for charger in chargers]
     reservations = Reservation.query.filter(Reservation.charger_id.in_(ids)).order_by(Reservation.start_time).all()
     for res in reservations:
@@ -457,7 +457,7 @@ def your_reservations():
     past_reservation_table = ReservationDriverTable(past_reservation_table_items)
     upcoming_reservation_table = ReservationDriverTable(upcoming_reservation_table_items)
 
-  return render_template('pages/your_reservations.html', upcoming_reservation_table=upcoming_reservation_table, past_reservation_table=past_reservation_table, user_profile=session['user_profile'])
+  return render_template('pages/your_reservations.html', upcoming_reservation_table=upcoming_reservation_table, reservations=reservations, past_reservation_table=past_reservation_table, user_profile=session['user_profile'])
 
 @app.route('/reservations/<id>', methods=["POST"])
 @requires_auth
