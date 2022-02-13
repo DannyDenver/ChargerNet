@@ -31,6 +31,9 @@
 <script src="/static/js/libs/modernizr-2.8.2.min.js"></script>
 <script src="/static/js/libs/moment.min.js"></script>
 <script type="text/javascript" src="/static/js/script.js" defer></script>
+
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 <!--[if lt IE 9]><script src="/static/js/libs/respond-1.4.2.min.js"></script><![endif]-->
 <!-- /scripts -->
 </head>
@@ -51,7 +54,7 @@
               <li {% if request.endpoint == 'register_charger_form' %} class="active" {% endif %}><a href="{{ url_for('register_charger_form') }}">Register Charger</a></li>
               <li><a href="#">View Reservations</a></li>
               {% elif user_profile %}
-              <li><a href="#">Find Charger</a></li>
+              <li {% if request.endpoint == 'find_charger' %} class="active" {% endif %}><a href="{{ url_for('find_charger') }}">Find Charger</a></li>
               <li {% if request.endpoint == 'register_car_form' %} class="active" {% endif %}><a href="{{ url_for('register_car_form') }}">Register your Car</a></li>
               <li {% if request.endpoint == 'your_cars' or request.endpoint == 'register_car_submission' %} class="active" {% endif %}><a  href="{{ url_for('your_cars') }}">Your Cars</a></li>
               {% endif %}

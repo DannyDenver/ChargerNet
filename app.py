@@ -54,9 +54,6 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# mapper_registry = registry()
-
-# @mapper_registry.as_declarative_base()
 class User(db.Model):
   __abstract__ = True
   oauth_id = db.Column(db.String(100))
@@ -376,6 +373,13 @@ def your_car_delete(id):
   cars_table = CarTable(cars)
 
   return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
+
+@app.route('/chargers', methods=["GET"])
+@requires_auth
+def find_charger():
+  chargers = Charger.query.all()
+
+  return render_template('pages/find_charger.html', chargers=chargers, user_profile=session['user_profile'])
 
 
 #  Venues
