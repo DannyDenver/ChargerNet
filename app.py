@@ -324,7 +324,7 @@ def your_chargers():
   chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
   charger_table = ChargerTable(chargers)
 
-  return render_template('pages/your_chargers.html', table=charger_table, user_profile=session['user_profile'])
+  return render_template('pages/your_chargers.html', chargers=chargers, table=charger_table, user_profile=session['user_profile'])
 
 @app.route('/chargers/your-chargers/<id>', methods=["POST"])
 @requires_auth
