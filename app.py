@@ -197,6 +197,7 @@ def callback_handling():
       session['user_profile'] = {
         'user_id': provider.id,
         'name': provider.name,
+        'picture': provider.profile_photo,
         'isProvider': True
       }
       return render_template('pages/home.html', user_profile=session['user_profile'])
@@ -204,6 +205,7 @@ def callback_handling():
       session['user_profile'] = {
         'user_id': driver.id,
         'name': driver.name,
+        'picture': driver.profile_photo,
         'isProvider': False
       }
       return render_template('pages/home.html', user_profile=session['user_profile'])
