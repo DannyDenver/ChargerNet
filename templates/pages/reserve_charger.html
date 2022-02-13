@@ -2,6 +2,88 @@
 {% block title %}Charger NET{% endblock %}
 {% block content %}
 
-{{ charger.id }}
+<head>
+        <link href=
+"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        rel="stylesheet">
+    <script src=
+"https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js">
+    </script>
+    <script src=
+"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js">
+    </script>
+ 
+    <!-- Include Moment.js CDN -->
+    <script type="text/javascript" src=
+"https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js">
+    </script>
+ 
+    <!-- Include Bootstrap DateTimePicker CDN -->
+    <link
+        href=
+"https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css"
+        rel="stylesheet">
+ 
+    <script src=
+"https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js">
+        </script>
+</head>
 
+<div class="row">
+        <div class="col-sm-6">
+            <h1>Charger ID: {{charger.id}}</h1>
+            <p class="lead">Plug Type: {{charger.plug_type}}</p>
+            <p class="lead">Charger Type: {{charger.charger_type}}</p>
+            <p class="lead">Is Covered: {{charger.covered_parking}}</p>
+            <p class="lead">Latitude: {{charger.location_latitude}}</p>
+            <p class="lead">Longitude: {{charger.location_longitude}}</p>
+            <div id="map" style="height: 200px"></div>
+
+        </div>
+        <div class="col-sm-6 hidden-sm hidden-xs">
+            <div class="form-wrapper">
+                    <form method="post" class="form">
+                        <input type="hidden" id="charger_id" name="charger_id" value="{{charger.id}}">
+
+                        <h3 class="form-heading">Schedule Reservation</h3>
+                        <div class="form-group">
+                            <label for="start_time">Start Time</label>    
+                            <input class="form-control" type="text" name="start_time" id="startdate" />
+                        </div>
+                        <div class="form-group">
+                            <label for="end_time">End Time</label>
+                            <input class="form-control" type="text" name="end_time" id="enddate" />
+                        </div>
+                        
+                      <input type="submit" value="Schedule Reservation" class="btn btn-primary btn-lg btn-block">
+                    </form>
+                  </div>
+        </div>
+    </div>
+
+    <script>
+            $('#startdate').datetimepicker();
+            $('#enddate').datetimepicker();
+        </script>
+{% block javascript %}
+    <script type="text/javascript">
+      // The first parameter are the coordinates of the center of the map
+      // The second parameter is the zoom level
+      var map = L.map('map').setView([39.7392, -104.9903], 11);
+      
+      // {s}, {z}, {x} and {y} are placeholders for map tiles
+      // {x} and {y} are the x/y of where you are on the map
+      // {z} is the zoom level
+      // {s} is the subdomain of cartodb
+        var layer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+      });
+    
+        L.marker([{{charger.location_latitude}}, {{charger.location_longitude}}]).addTo(map)
+        .bindPopup("<a href='/chargers/{{charger.id}}' ><strong>{{charger.plug_type}} - {{charger.charger_type}}</strong></a>").openPopup();
+            
+      // Now add the layer onto the map
+      map.addLayer(layer);
+    </script>
+    {% endblock %}  
 {% endblock %}

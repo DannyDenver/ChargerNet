@@ -4,7 +4,6 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, IntegerField, SelectMultipleField, DateTimeField, BooleanField
 from wtforms.validators import DataRequired, AnyOf, URL, InputRequired, Regexp
 
-
 car_makes = ["Abarth",
             "Alfa Romeo",
             "Aston Martin",
@@ -136,4 +135,3 @@ class CarRegistrationForm(Form):
     plug_type = SelectField('Plug Type',
         choices=[('Type 1', 'Type 1'),('Type 2', 'Type 2'), ('CSS', 'CSS'), ('CHAdeMO', 'CHAdeMO')],
         validators=[InputRequired("Please select a charger type.")])
-

@@ -111,6 +111,7 @@ class Reservation(db.Model):
   driver_id = db.Column(db.Integer, db.ForeignKey('Driver.id'), nullable=False)
   charger_id = db.Column(db.Integer, db.ForeignKey('Charger.id'), nullable=False)
   start_time = db.Column(db.DateTime, nullable=False)
+  end_time = db.Column(db.DateTime, nullable=False)
   reservation_driver = db.relationship("Driver")
   reservation_charger = db.relationship("Charger")
 
@@ -297,6 +298,7 @@ def register_charger_submission():
                           chargerForm=chargerForm)
 
   charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+  
   db.session.add(charger)
   db.session.commit()
 
@@ -385,8 +387,18 @@ def find_charger():
 @requires_auth
 def reserve_charger(id):
   charger = Charger.query.get(id)
-  print(charger)
 
+  return render_template('pages/reserve_charger.html', charger=charger, user_profile=session['user_profile'])
+
+@app.route('/chargers/<id>', methods=["POST"])
+@requires_auth
+def reserve_charger_submission(id):
+  charger = Charger.query.get(id)
+
+  reservation=Reservation(driver_id=session['user_profile']['user_id'], charger_id=request.form.get('charger_id'), start_time=request.form.get('start_time'), end_time=request.form.get('end_time'))
+  
+  db.session.add(reservation)
+  db.session.commit()
   return render_template('pages/reserve_charger.html', charger=charger, user_profile=session['user_profile'])
 
 

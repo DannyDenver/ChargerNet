@@ -18,10 +18,10 @@
   });
 
   {% for charger in chargers %}
-
-  L.marker([{{charger.location_latitude}}, {{charger.location_longitude}}]).addTo(map)
-  .bindPopup("<a href='/chargers/{{charger.id}}' ><strong>{{charger.plug_type}} - {{charger.charger_type}}</strong></a>").openPopup();
-
+    
+    L.marker([{{charger.location_latitude}}, {{charger.location_longitude}}]).addTo(map)
+    .bindPopup("<a href='/chargers/{{charger.id}}' ><strong>{{charger.plug_type}} - {{charger.charger_type}}</strong></a>").openPopup();
+  
   {% endfor%}
   
   // Now add the layer onto the map
