@@ -2,8 +2,10 @@
 {% block title %}Charger NET{% endblock %}
 {% block content %}
 
-<h2>{{ user_profile.name}}'s Upcoming Reservations</h2>
-{{ upcoming_reservation_table }}
+<h2>{{ user_profile.name}}'s Upcoming Reservations</h2> 
+<a href="{{ url_for('download_reservations') }}"><button class="btn btn-primary btn-lg btn-block">Download Reservations as CSV</button></a>
+
+  {{ upcoming_reservation_table }}
 
 <div id="map" style="height: 500px"></div>
 {% block javascript %}
