@@ -63,8 +63,8 @@
               <button type="submit" class="btn btn-default">Submit</button>
             </form>
             <ul class="nav navbar-nav navbar-right">
-              {% if name %}
-              <li style="margin:6px"><h4>Hello, {{ name  }}</h4></li>
+              {% if user_profile %}
+              <li style="margin:6px"><h4>Hello, {{ user_profile.name  }}</h4></li>
               {% endif %}
                 {% if user_profile %}
                 <li><a class="btn btn-primary btn-sm" href="/logout">Log Out</a></li>

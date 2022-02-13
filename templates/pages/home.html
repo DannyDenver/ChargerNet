@@ -7,7 +7,12 @@
 		<p class="lead">Where EV Drivers find Chargers.</p>
 		<h3>
 			<a href="/chargers"><button class="btn btn-primary btn-lg">Find a Charger</button></a>
-			<a href="/chargers/create"><button class="btn btn-default btn-lg">Add a Charger</button></a>
+
+			{% if user_profile and user_profile.isProvider %}
+			<a href="{{ url_for('register_charger_form') }}"><button class="btn btn-default btn-lg">Add a Charger</button></a>
+			{% elif user_profile %}
+			<a href="{{ url_for('register_car_form') }}"><button class="btn btn-default btn-lg">Register a Car</button></a>
+			{% endif %}
 		</h3>
 	</div>
 	<div class="col-sm-6 hidden-sm hidden-xs">
