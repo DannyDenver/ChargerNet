@@ -17,7 +17,7 @@ import sys
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.hybrid import hybrid_property
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy.orm import registry, declared_attr
 from authlib.integrations.flask_client import OAuth
 from functools import wraps
@@ -27,7 +27,6 @@ from dotenv import dotenv_values
 from tables.charger_table import ChargerTable
 from tables.cars_table import CarTable
 from tables.reservations_table import ReservationTable, ReservationTableItem, ReservationDriverTableItem, ReservationDriverTable
-from datetime import datetime
 from sqlalchemy.orm import backref
 import flask_excel as excel
 
@@ -255,25 +254,36 @@ def create_profile_submission():
     return render_template('pages/create_profile.html', user_profile=session['profile'], userForm=userForm)
 
   if request.form.get('is_provider', None) == 'y':
-    provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
-    db.session.add(provider)
-    db.session.commit()
-    session['user_profile'] = {
-        'user_id': provider.id,
-        'name': provider.name,
-        'picture': provider.profile_photo,
-        'isProvider': True
-      }
+    try:
+      provider=Provider(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'], mailing_address=request.form['mailing_address'])
+      db.session.add(provider)
+      db.session.commit()
+      session['user_profile'] = {
+          'user_id': provider.id,
+          'name': provider.name,
+          'picture': provider.profile_photo,
+          'isProvider': True
+        }
+    except:
+      db.session.rollback()
+    finally:
+      db.session.close()
+
   else: 
-    driver=Driver(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'])
-    db.session.add(driver)
-    db.session.commit()
-    session['user_profile'] = {
-        'user_id': driver.id,
-        'name': driver.name,
-        'picture': driver.profile_photo,
-        'isProvider': False
-      }
+    try:
+      driver=Driver(oauth_id=session['jwt_payload']['sub'], name=request.form['name'], phone_number=request.form['phone_number'], profile_photo=session['jwt_payload']['picture'])
+      db.session.add(driver)
+      db.session.commit()
+      session['user_profile'] = {
+          'user_id': driver.id,
+          'name': driver.name,
+          'picture': driver.profile_photo,
+          'isProvider': False
+        }
+    except:
+      db.session.rollback()
+    finally:
+      db.session.close()
 
   return render_template('pages/home.html', user_profile=session['user_profile'])
 
@@ -309,10 +319,14 @@ def register_charger_submission():
     return render_template('pages/register_charger.html',
                           chargerForm=chargerForm)
 
-  charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
-  
-  db.session.add(charger)
-  db.session.commit()
+  try:
+    charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+    db.session.add(charger)
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
 
   return redirect(url_for('your_chargers'))
 
@@ -356,9 +370,14 @@ def register_car_submission():
     return render_template('pages/register_car.html',
                           carForm=carForm)
 
-  car=Car(driver_id=session['user_profile']['user_id'], make=request.form.get('make'), model=request.form.get('model'), year=request.form.get('year'), plug_type=request.form.get('plug_type'))
-  db.session.add(car)
-  db.session.commit()
+  try:
+    car=Car(driver_id=session['user_profile']['user_id'], make=request.form.get('make'), model=request.form.get('model'), year=request.form.get('year'), plug_type=request.form.get('plug_type'))
+    db.session.add(car)
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
 
   cars = Car.query.filter(Car.driver_id==session['user_profile']['user_id']).all()
   cars_table = CarTable(cars)
@@ -415,12 +434,14 @@ def reserve_charger_submission(id):
     cars = Car.query.filter_by(driver_id=session['user_profile']['user_id']).filter_by(plug_type=charger.plug_type).all()
     return render_template('pages/reserve_charger.html', charger=charger, cars=cars, time_error=time_error, user_profile=session['user_profile'])
 
-
-
-  reservation=Reservation(driver_id=session['user_profile']['user_id'], car_id=request.form.get('car_id'), charger_id=request.form.get('charger_id'), start_time=request.form.get('start_time'), end_time=request.form.get('end_time'))
-  
-  db.session.add(reservation)
-  db.session.commit()
+  try:
+    reservation=Reservation(driver_id=session['user_profile']['user_id'], car_id=request.form.get('car_id'), charger_id=request.form.get('charger_id'), start_time=request.form.get('start_time'), end_time=request.form.get('end_time'))
+    db.session.add(reservation)
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
   
   return redirect(url_for('your_reservations'))
 
@@ -462,11 +483,9 @@ def your_reservations():
 @requires_auth
 def your_reservation_delete(id):
   try:
-    print(id)
     db.session.query(Reservation).filter_by(id=id).delete()
     db.session.commit()
   except:
-    print('exception thrown')
     db.session.rollback()
   finally:
     db.session.close()
@@ -482,6 +501,10 @@ def download_reservations():
     chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
     ids = [charger.id for charger in chargers]
     reservations = Reservation.query.filter(Reservation.charger_id.in_(ids)).order_by(Reservation.start_time).all()
+    data.append([f"Reservation Report for {session['user_profile']['name']}"])
+    data.append([f"Created on {date.today()}"])
+    data.append([])
+    
     data.append(["Reservation ID", "Driver", "Car", "Charger ID", "Latitude", "Longitude", "Start", "End"])
 
     for res in reservations:
@@ -493,6 +516,10 @@ def download_reservations():
     return output
   else:
     reservations = Reservation.query.filter(Reservation.driver_id==session['user_profile']['user_id']).order_by(Reservation.start_time).all()
+    data.append([f"Reservation Report for {session['user_profile']['name']}"])
+    data.append([f"Created on {date.today()}"])
+    data.append([])
+    
     data.append(["Reservation ID", "Provider", "Car", "Charger ID", "Latitude", "Longitude", "Start", "End"])
 
     for res in reservations:
