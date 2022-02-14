@@ -34,28 +34,33 @@ env_config = dotenv_values(".env")
 #----------------------------------------------------------------------------#
 # App Config. 
 #----------------------------------------------------------------------------#
+def create_app(env_config):
+  app = Flask(__name__)
+  excel.init_excel(app) 
+  oauth = OAuth(app)
 
-app = Flask(__name__)
-excel.init_excel(app) 
-oauth = OAuth(app)
+  auth0 = oauth.register(
+    'auth0',
+    client_id='RF0NE1fGynyjE4a4o96hwUatOVu7Iedr',
+    client_secret=env_config['SECRET'],
+    api_base_url='https://dev-u5hxbgvm.us.auth0.com',
+    access_token_url='https://dev-u5hxbgvm.us.auth0.com/oauth/token',
+    authorize_url='https://dev-u5hxbgvm.us.auth0.com/authorize',
+    client_kwargs={
+      'scope': 'openid profile email'
+    },
+  )
+  moment = Moment(app)
+  app.config.from_object('config')
+  db = SQLAlchemy(app)
+  migrate = Migrate(app, db)
 
-auth0 = oauth.register(
-  'auth0',
-  client_id='RF0NE1fGynyjE4a4o96hwUatOVu7Iedr',
-  client_secret=env_config['SECRET'],
-  api_base_url='https://dev-u5hxbgvm.us.auth0.com',
-  access_token_url='https://dev-u5hxbgvm.us.auth0.com/oauth/token',
-  authorize_url='https://dev-u5hxbgvm.us.auth0.com/authorize',
-  client_kwargs={
-    'scope': 'openid profile email'
-  },
-)
+  return (app, db, auth0)
 
-moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+app, db, auth0 = create_app(env_config)
 
+
+    
 class User(db.Model):
   __abstract__ = True
   oauth_id = db.Column(db.String(100))
