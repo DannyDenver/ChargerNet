@@ -32,7 +32,7 @@ env_config = dotenv_values(".env")
 
 def create_app(test_configure=None):
   app = Flask(__name__)
-  excel.init_excel(app) 
+  excel.init_excel(app)
 
   moment = Moment(app)
   app.config.from_object('config')
@@ -40,7 +40,6 @@ def create_app(test_configure=None):
   migrate = Migrate(app, db)
     
   oauth = OAuth(app)
-
   auth0 = oauth.register(
     'auth0',
     client_id='RF0NE1fGynyjE4a4o96hwUatOVu7Iedr',
@@ -99,9 +98,32 @@ def create_app(test_configure=None):
   def login():
       return auth0.authorize_redirect(redirect_uri='http://localhost:5000/callback')
     
-  # @app.route('/simple-login')
-  # def simple_login(): 
-  #   return auth0.
+
+  def requires_provider_role(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+      if 'profile' not in session:
+        # Redirect to Login page here
+        return redirect('/')
+
+      if session.get('user_profile', None).get('isProvider') != True:
+        # Redirect to Login page here
+        return redirect('/')
+      return f(*args, **kwargs)
+    return decorated
+
+  def requires_driver_role(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+      if 'profile' not in session:
+        # Redirect to Login page here
+        return redirect('/')
+
+      if session['user_profile']['isProvider'] == True:
+        # Redirect to Login page here
+        return redirect('/')
+      return f(*args, **kwargs)
+    return decorated
 
   def requires_auth(f):
     @wraps(f)
@@ -110,7 +132,6 @@ def create_app(test_configure=None):
         # Redirect to Login page here
         return redirect('/')
       return f(*args, **kwargs)
-
     return decorated
 
   @app.route('/user/create', methods=['GET'])
@@ -194,14 +215,14 @@ def create_app(test_configure=None):
     return render_template('pages/home.html')
 
   @app.route('/chargers/register', methods=['GET'])
-  @requires_auth
+  @requires_provider_role
   def register_charger_form():
     chargerForm = ChargerRegistrationForm()
 
     return render_template('pages/register_charger.html', chargerForm=chargerForm, user_profile=session['user_profile'])
 
   @app.route('/chargers/register', methods=['POST'])
-  @requires_auth
+  @requires_provider_role
   def register_charger_submission():
     chargerForm = ChargerRegistrationForm(request.form)  
 
@@ -222,7 +243,7 @@ def create_app(test_configure=None):
 
 
   @app.route('/chargers/your-chargers', methods=["GET"])
-  @requires_auth
+  @requires_provider_role
   def your_chargers():
     chargers = Charger.query.filter(Charger.provider_id==session.get('user_profile').get('user_id')).all()
     charger_table = ChargerTable(chargers)
@@ -230,7 +251,7 @@ def create_app(test_configure=None):
     return render_template('pages/your_chargers.html', chargers=chargers, table=charger_table, user_profile=session['user_profile'])
 
   @app.route('/chargers/your-chargers/<id>', methods=["POST"])
-  @requires_auth
+  @requires_provider_role
   def your_chargers_delete(id):
     try:
       db.session.query(Charger).filter_by(provider_id=session.get('user_profile').get('user_id')).filter_by(id=id).delete()
@@ -245,14 +266,14 @@ def create_app(test_configure=None):
     return render_template('pages/your_chargers.html', table=charger_table, user_profile=session['user_profile'])
 
   @app.route('/cars/register', methods=['GET'])
-  @requires_auth
+  @requires_driver_role
   def register_car_form():
     carForm = CarRegistrationForm()
 
     return render_template('pages/register_car.html', carForm=carForm, user_profile=session['user_profile'])
 
   @app.route('/cars/register', methods=['POST'])
-  @requires_auth
+  @requires_driver_role
   def register_car_submission():
     carForm = CarRegistrationForm(request.form)
 
@@ -275,7 +296,7 @@ def create_app(test_configure=None):
     return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
 
   @app.route('/cars', methods=["GET"])
-  @requires_auth
+  @requires_driver_role
   def your_cars():
     cars = Car.query.filter(Car.driver_id==session['user_profile']['user_id']).all()
     cars_table = CarTable(cars)
@@ -283,7 +304,7 @@ def create_app(test_configure=None):
     return render_template('pages/your_cars.html', table=cars_table, user_profile=session['user_profile'])
 
   @app.route('/cars/<id>', methods=["POST"])
-  @requires_auth
+  @requires_driver_role
   def your_car_delete(id):
     try:
       db.session.query(Car).filter_by(driver_id=session['user_profile']['user_id']).filter_by(id=id).delete()
