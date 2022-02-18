@@ -30,7 +30,8 @@ from tables.reservations_table import ReservationTable, ReservationTableItem, Re
 from sqlalchemy.orm import backref
 import flask_excel as excel
 
-from charger_net import create_app
+from charger_net import create_app, models
+import charger_net.models
 
 env_config = dotenv_values(".env")
 

@@ -1,11 +1,11 @@
-Fyyur
+ChargerNET
 -----
 
 ### Introduction
 
-Fyyur is a musical venue and artist booking site that facilitates the discovery and bookings of shows between local performing artists and venues. This site lets you list new artists and venues, discover them, and list shows with artists as a venue owner.
+Charger NET – a site where people who have electric vehicle (EV) chargers and people with EV vehicles can create a profile and register their charger or car and schedule reservations. 
 
-Your job is to build out the data models to power the API endpoints for the Fyyur site by connecting to a PostgreSQL database for storing, querying, and creating information about artists and venues on Fyyur.
+The adoption of electric vehicles is being stymied by the slow build up of electric vehicle chargers. Potential EV customers are being scared away by range anxiety, ie running out of battery while they are far from a charger or are worried about long lines at the few chargers available.   Charger NET will open up EV drivers to more chargers to alleviate these anxieties, potentially lower the cost of recharging and allow EV charger providers to make some money. 
 
 ### Overview
 

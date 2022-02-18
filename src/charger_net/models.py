@@ -117,6 +117,8 @@ class Charger(db.Model):
     location_latitude = db.Column(db.String(100))
     plug_type = db.Column(db.String(20))
     covered_parking = db.Column(db.Boolean)
+    state = db.Column(db.String(50))
+    town = db.Column(db.String(50))
     provider = db.relationship("Provider")
     reservations = db.relationship('Reservation', cascade='all, delete', passive_deletes=True, backref="charger")
 

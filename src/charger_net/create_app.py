@@ -27,18 +27,25 @@ from sqlalchemy.orm import backref
 import flask_excel as excel
 from sqlalchemy.exc import SQLAlchemyError
 from charger_net.models import *
+from geopy.geocoders import Nominatim
 
 env_config = dotenv_values(".env")
 
+migrate = Migrate()
+
 def create_app(test_configure=None):
   app = Flask(__name__)
+  app.config.from_object('config')
+  
+  from charger_net.models import db
+
+  db.init_app(app)
+  migrate.init_app(app, db)
+
   excel.init_excel(app)
 
   moment = Moment(app)
-  app.config.from_object('config')
-  db = SQLAlchemy(app)
-  migrate = Migrate(app, db)
-    
+  
   oauth = OAuth(app)
   auth0 = oauth.register(
     'auth0',
@@ -52,8 +59,7 @@ def create_app(test_configure=None):
     },
   )
 
-  from charger_net.models import db
-  db.init_app(app)
+
 
   @app.route('/callback')
   def callback_handling():
@@ -231,7 +237,12 @@ def create_app(test_configure=None):
                             chargerForm=chargerForm)
 
     try:
-      charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), covered_parking=True if request.form.get('covered_parking') is 'y' else False)
+      geolocator = Nominatim(user_agent='chargerNET')
+      coord = f"{request.form.get('location_latitude')}, {request.form.get('location_longitude')}"
+      location = geolocator.reverse(coord)
+
+
+      charger=Charger(provider_id=session['user_profile']['user_id'], charger_type=request.form.get('charger_type'), plug_type=request.form.get('plug_type'), location_latitude=request.form.get('location_latitude'), location_longitude=request.form.get('location_longitude'), town=location.raw['address']['city'], state=location.raw['address']['state'], covered_parking=True if request.form.get('covered_parking') is 'y' else False)
       db.session.add(charger)
       db.session.commit()
     except:
@@ -335,7 +346,7 @@ def create_app(test_configure=None):
     return render_template('pages/reserve_charger.html', charger=charger, cars=cars, user_profile=session['user_profile'])
 
   @app.route('/chargers/<id>', methods=["POST"])
-  @requires_auth
+  @requires_driver_role
   def reserve_charger_submission(id):
     charger = Charger.query.get(id)
     time_error = []
@@ -402,6 +413,13 @@ def create_app(test_configure=None):
       db.session.close()
 
     return redirect(url_for('your_reservations'))
+
+  @app.route('/search', methods=["POST"])
+  def search():
+    searchTerm = request.form.get('search')
+    print(searchTerm)
+    return redirect(url_for('index'))
+
 
   @app.route('/download-reservations')
   @requires_auth
