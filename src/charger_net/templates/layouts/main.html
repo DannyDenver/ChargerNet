@@ -53,7 +53,7 @@
               <li {% if request.endpoint == 'your_chargers' %} class="active" {% endif %}><a  href="{{ url_for('your_chargers') }}">Your Chargers</a></li>
               <li {% if request.endpoint == 'register_charger_form' %} class="active" {% endif %}><a href="{{ url_for('register_charger_form') }}">Register Charger</a></li>
               <li {% if request.endpoint == 'your_reservations' %} class="active" {% endif %}><a  href="{{ url_for('your_reservations') }}">Your Reservations</a></li>
-              {% elif user_profile %}
+              {% elif user_profile and request.endpoint != 'create_profile_form' %}
               <li {% if request.endpoint == 'find_charger' %} class="active" {% endif %}><a href="{{ url_for('find_charger') }}">Find Charger</a></li>
               <li {% if request.endpoint == 'register_car_form' %} class="active" {% endif %}><a href="{{ url_for('register_car_form') }}">Register your Car</a></li>
               <li {% if request.endpoint == 'your_cars' or request.endpoint == 'register_car_submission' %} class="active" {% endif %}><a  href="{{ url_for('your_cars') }}">Your Cars</a></li>
@@ -76,12 +76,14 @@
                     <li><a class="btn btn-primary btn-sm" href="/login">Log In</a></li>
                   {% endif %}
                   </ul>
-            <form class="navbar-form navbar-right" action="/search" method="POST">
-              <div class="form-group">
-                <input type="text" class="form-control" name="search" placeholder="Search by town or state">
-              </div>
-              <input type="submit" class="btn btn-default">Submit</input>
-            </form>
+                  {% if user_profile and user_profile.isProvider is false %}
+                  <form class="navbar-form navbar-right" action="/search" method="POST">
+                    <div class="form-group">
+                      <input type="text" class="form-control" name="search" style="width:250px" placeholder="Search chargers by town or state">
+                    </div>
+                    <input type="submit" class="btn btn-default"></input>
+                  </form>
+              {% endif %}
             </div>
       </div>
     </nav>

@@ -21,6 +21,7 @@ from flask import session
 from six.moves.urllib.parse import urlencode
 from dotenv import dotenv_values
 from tables.charger_table import ChargerTable
+from tables.charger_search_result_table import ChargerSearchResultTable
 from tables.cars_table import CarTable
 from tables.reservations_table import ReservationTable, ReservationTableItem, ReservationDriverTableItem, ReservationDriverTable
 from sqlalchemy.orm import backref
@@ -58,8 +59,6 @@ def create_app(test_configure=None):
       'scope': 'openid profile email'
     },
   )
-
-
 
   @app.route('/callback')
   def callback_handling():
@@ -416,9 +415,15 @@ def create_app(test_configure=None):
 
   @app.route('/search', methods=["POST"])
   def search():
-    searchTerm = request.form.get('search')
-    print(searchTerm)
-    return redirect(url_for('index'))
+    search_term = request.form.get('search')
+    search_term_lower=search_term.lower()
+
+    chargers = Charger.query.filter((func.lower(Charger.town)==search_term_lower) | (func.lower(Charger.state)==search_term_lower)).all()
+    charger_table = ChargerSearchResultTable(chargers)
+
+    print(chargers)
+    return render_template('pages/search_charger_results.html', search_term=search_term, table=charger_table, chargers=chargers, user_profile=session['user_profile'])
+
 
 
   @app.route('/download-reservations')
