@@ -11,6 +11,11 @@ def test_username_on_homepage(client):
     assert session.get('user_profile', None) is not None
     assert b"Test User" in response.data
 
+def test_charger_register(client):
+    response = client.get("/chargers/register")
+
+    assert b"Register your charger" in response.data
+
 def test_logout(client):
     response = client.get("/logout")
     assert session.get('user_profile', None) is None
