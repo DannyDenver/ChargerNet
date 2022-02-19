@@ -193,13 +193,14 @@ def create_app(test_configure=None):
       except:
         db.session.rollback()
       finally:
-        db.session.close()
         session['user_profile'] =  {
             'user_id': driver.id,
             'name': driver.name,
             'picture': driver.profile_photo,
             'isProvider': False
           }
+        db.session.close()
+
 
     return render_template('pages/home.html', user_profile=session['user_profile'])
 
