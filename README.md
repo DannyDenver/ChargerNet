@@ -7,15 +7,6 @@ Charger NET – a site where people who have electric vehicle (EV) chargers and 
 
 The adoption of electric vehicles is being stymied by the slow build up of electric vehicle chargers. Potential EV customers are being scared away by range anxiety, ie running out of battery while they are far from a charger or are worried about long lines at the few chargers available.   Charger NET will open up EV drivers to more chargers to alleviate these anxieties, potentially lower the cost of recharging and allow EV charger providers to make some money. 
 
-### Overview
-
-This app is nearly complete. It is only missing one thing… real data! While the views and controllers are defined in this application, it is missing models and model interactions to be able to store retrieve, and update data from a database. By the end of this project, you should have a fully functioning site that is at least capable of doing the following, if not more, using a PostgreSQL database:
-
-* creating new venues, artists, and creating new shows.
-* searching for venues and artists.
-* learning more about a specific artist or venue.
-
-We want Fyyur to be the next new platform that artists and musical venues can use to find each other, and discover new music shows. Let's make that happen!
 
 ### Tech Stack
 
