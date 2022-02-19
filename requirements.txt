@@ -26,6 +26,8 @@ Flask-OAuthlib==0.9.6
 Flask-SQLAlchemy==2.5.1
 Flask-Table==0.5.0
 Flask-WTF==1.0.0
+geographiclib==1.52
+geopy==2.2.0
 ghp-import==2.0.2
 greenlet==1.1.2
 html5lib==1.1
